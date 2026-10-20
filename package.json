@@ -1,0 +1,22 @@
+{
+  "name": "diascale",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 4173 --strictPort",
+    "prototype": "vite --host 127.0.0.1 --port 4173 --strictPort --open /prototype/",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4174 --strictPort",
+    "format": "prettier --write src index.html package.json vite.config.js scripts docs README.md",
+    "android:build": "npm run build && node scripts/sync-android.mjs && cd android && ./gradlew assembleDebug"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10",
+    "vite": "^8.3.4"
+  },
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0"
+  }
+}
