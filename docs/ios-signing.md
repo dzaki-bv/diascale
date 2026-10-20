@@ -37,3 +37,7 @@ npm run ios:install
 `ios:check` memeriksa konfigurasi dan perangkat tanpa menjalankan signing. `ios:install` membundel UI terbaru, membuat build development dengan automatic provisioning, memastikan profil mencakup iPhone terpilih, memverifikasi signature, memasang, lalu meminta iPhone membuka aplikasi. Build menggunakan target/SDK iPhone sehingga pemasangan fisik tidak bergantung pada runtime simulator. Jika ada beberapa perangkat, pilih secara eksplisit dengan `npm run ios:install -- --device IDENTIFIER` dari keluaran `xcrun devicectl list devices`.
 
 Jika pemilihan team melalui UI Xcode menambahkan `DEVELOPMENT_TEAM` ke project, pindahkan nilai tersebut ke konfigurasi lokal sebelum membagikan perubahan project. Akun Xcode yang aktif harus memiliki team tersebut; sertifikat lama di Keychain saja tidak cukup.
+
+## Hasil pemasangan 21 Oktober 2026
+
+Build development berhasil ditandatangani, profil mencakup iPhone terpilih, dan aplikasi berhasil dipasang. Setelah pairing, Developer Mode, dan kepercayaan profil diselesaikan pemilik perangkat, peluncuran melalui devicectl berhasil dan pengguna mengonfirmasi DiaScale terbuka. Profil build ini berakhir pada **28 Oktober 2026 pukul 00.59 WIB**; jalankan ulang `npm run ios:install` untuk memperbaruinya.
