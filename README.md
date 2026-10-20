@@ -34,7 +34,7 @@ APK berisi aset dan font lokal. Android memuat konten melalui WebViewAssetLoader
 
 Belum ada backend, pengiriman OTP sungguhan, Bluetooth, atau metode penilaian risiko klinis. Gunakan kode enam digit untuk melanjutkan alur OTP. Data hasil adalah contoh, bukan penilaian medis; data akun dan riwayat hanya berada di memori dan hilang saat aplikasi dimuat ulang atau proses dihentikan. Perubahan profil tidak mengubah snapshot hasil lama. Tidak ada penyimpanan atau pengiriman data kesehatan ke server.
 
-Sesuai permintaan pengguna, tidak ditambahkan atau dijalankan tes maupun pemeriksaan UI browser. Build web dan kompilasi Android dijalankan untuk menghasilkan APK yang dipasang.
+Tes otomatis kini tersedia melalui `npm test`, sesuai instruksi terbaru pengguna. Tes memeriksa data akun, alur interaksi DOM dari bundel iOS produksi, dan keamanan pengemasan offline. Lihat `docs/testing.md` untuk cakupan dan batasnya.
 
 ## Susunan kode
 
@@ -53,3 +53,5 @@ npm run ios:build:device
 ```
 
 Project Xcode: `ios/DiaScale.xcodeproj`. Build simulator dan iPhone ada di `ios/build/Build/Products/`. Build iPhone belum ditandatangani; pemasangan fisik memerlukan Apple development team dan provisioning yang sesuai di Xcode. Lihat `ios/README.md` untuk langkah lengkap. Versi iOS membundel UI dan font yang sama secara offline, tanpa server.
+
+Panduan akun Apple gratis/Personal Team dan distribusi ke teman: `docs/ios-signing.md`.

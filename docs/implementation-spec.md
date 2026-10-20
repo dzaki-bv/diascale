@@ -26,3 +26,7 @@ The user explicitly requested no tests or browser QA; respect that instruction. 
 ## iOS follow-up
 
 The user requested an iOS version after Android delivery. Reuse the approved frontend in a SwiftUI/WKWebView app supporting iOS 16+, with bundled offline content/fonts, native safe areas, no duplicate desktop frame or controls, and no backend/native Bluetooth integration. Prepare an Xcode project plus simulator and unsigned device builds. Do not claim physical installation or a signed distributable without an attached device and Apple provisioning. Keep the user's no-tests/no-UI-QA instruction.
+
+## Testing and signing follow-up
+
+The user now explicitly requests tests and signing guidance for a friend’s iPhone, and confirms using a free Apple Account. This supersedes the earlier no-tests restriction. Test existing public account, interaction, and packaging boundaries; fix reproduced failures without adding backend or real Bluetooth. Provide Personal Team/Xcode steps and expiry limitations with current Apple sources; distinguish this from paid TestFlight. Do not sign into an Apple account or register a device without the required user inputs.

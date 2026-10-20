@@ -198,15 +198,30 @@ document.addEventListener("click", (e) => {
   }
 });
 
+document.addEventListener("input", (event) => {
+  if (event.target instanceof HTMLInputElement)
+    event.target.setCustomValidity("");
+});
+
 document.addEventListener("submit", (e) => {
   e.preventDefault();
   let data = Object.fromEntries(new FormData(e.target));
   switch (e.target.id) {
-    case "phone-form":
-      state.phone = normalizePhone(data.phone);
+    case "phone-form": {
+      const phone = normalizePhone(data.phone);
+      if (!/^8\d{8,12}$/.test(phone)) {
+        const input = e.target.querySelector('[name="phone"]');
+        input.setCustomValidity(
+          "Masukkan nomor HP yang valid, misalnya 81234567890.",
+        );
+        input.reportValidity();
+        return;
+      }
+      state.phone = phone;
       state.otpSentAt = Date.now();
       go("otp");
       break;
+    }
     case "otp-form":
       openAccount(state.phone, state.mode);
       go(state.mode === "login" ? "home" : "personal");

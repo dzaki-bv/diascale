@@ -35,3 +35,19 @@ No findings. The app reuses the approved frontend offline, targets iOS/iPadOS 16
 ### Build evidence
 
 Both target/SDK builds completed successfully: `iphoneos` and `iphonesimulator`. No iPhone or installed simulator runtime was available. Generic-destination compilation initially failed due to the missing simulator runtime; target/SDK compilation with ordinary PNG icon resources avoids that runtime dependency. The simulator app was ad-hoc signed and both outputs were zipped under `output/ios/`. No tests, UI inspection, simulator launch, or physical installation was performed.
+
+## Automated testing and free-account signing follow-up
+
+Baseline: `8edbbe1`. The user explicitly authorized tests and confirmed a free Apple Account. Two independent source reviews covered the test harness/suites, focused phone-validation fix, package scripts, and signing guidance.
+
+### Standards
+
+No application regression found. One coverage gap was identified: letters alone were blocked by HTML validation before reaching the normalized-number guard. The regression test now additionally submits invalid numeric inputs, checks validation feedback, corrects the number, and verifies successful OTP navigation. The controlled timer harness covers callback ordering/cancellation; it does not simulate Date.now or claim date-dependent clock coverage.
+
+### Spec
+
+No findings. Tests execute the actual bundled iOS JavaScript in jsdom, account model, and packaging CLI; documentation distinguishes these from native UI/WKWebView testing. Signing guidance uses current Apple sources for Personal Team, automatic signing, device pairing, 7-day provisioning, and paid TestFlight. No Apple login, device registration, certificate provisioning, or installation was performed.
+
+### Evidence
+
+Final `npm test`: 22 passed, 0 failed, 0 skipped. iPhone and simulator builds succeeded; refreshed archives are in `output/ios/`. Native UI remains untested because no iPhone or installed simulator runtime is available.
