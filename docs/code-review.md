@@ -51,3 +51,19 @@ No findings. Tests execute the actual bundled iOS JavaScript in jsdom, account m
 ### Evidence
 
 Final `npm test`: 22 passed, 0 failed, 0 skipped. iPhone and simulator builds succeeded; refreshed archives are in `output/ios/`. Native UI remains untested because no iPhone or installed simulator runtime is available.
+
+## Physical iPhone signing and installer follow-up
+
+Baseline: `199fd20`. Two independent source reviews covered local signing configuration and the device installer against the user's free-account direct-install request.
+
+### Standards
+
+The initial installer verified a signature but did not verify that the provisioning profile included the selected iPhone. Resolved by decoding the embedded profile and requiring the selected hardware UDID in `ProvisionedDevices` before installation. Regression fixtures verify refusal for an excluded phone and signature verification before installation for an included phone. Follow-up review found no remaining substantive issue. Team selection is held in ignored local configuration, not project overrides.
+
+### Spec
+
+The same provisioning coverage gap was identified independently and resolved. Follow-up inspection found no remaining Spec findings. Multiple connected devices require an explicit identifier, check-only mode does not provision, and disabled Developer Mode stops the installer.
+
+### Evidence
+
+`npm test`: 30 passed, 0 failed, 0 skipped. Real development signing and signature verification succeeded using a logged-in Personal Team. The embedded profile includes the attached iPhone; `devicectl` reported successful installation after pairing and enabling Developer Mode. Launch is waiting for the owner to trust the developer profile on the iPhone. The simulator runtime download was cancelled once direct target/SDK signing and physical installation succeeded; it is unnecessary for this installation path.

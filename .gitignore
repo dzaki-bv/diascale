@@ -12,3 +12,5 @@ ios/build/
 ios/DiaScale/Web/
 **/xcuserdata/
 *.xcuserstate
+ios/Signing.local.xcconfig
+ios/build-signed/

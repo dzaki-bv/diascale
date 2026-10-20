@@ -25,4 +25,15 @@ Akun gratis saat ini belum menyediakan jalur TestFlight. Mengirim ZIP unsigned a
 
 Rujukan Apple: [keanggotaan dan TestFlight](https://developer.apple.com/programs/), [biaya keanggotaan](https://developer.apple.com/help/account/membership/program-enrollment), [tester eksternal](https://developer.apple.com/help/app-store-connect/test-a-beta-version/invite-external-testers/).
 
-Tidak ada akun Apple, sertifikat, provisioning profile, atau perangkat teman yang didaftarkan oleh perubahan kode ini. Pemilihan akun/team dan penyambungan iPhone masih perlu dilakukan sebelum signing fisik.
+## Instalasi ulang melalui terminal
+
+Setelah akun Xcode dan perangkat siap, salin `ios/Signing.local.xcconfig.example` menjadi `ios/Signing.local.xcconfig`, lalu isi Team ID dari Personal Team yang dipilih di Xcode dan bundle identifier unik. File lokal ini diabaikan Git; sertifikat dan provisioning tetap dikelola Xcode/Keychain.
+
+```sh
+npm run ios:check
+npm run ios:install
+```
+
+`ios:check` memeriksa konfigurasi dan perangkat tanpa menjalankan signing. `ios:install` membundel UI terbaru, membuat build development dengan automatic provisioning, memastikan profil mencakup iPhone terpilih, memverifikasi signature, memasang, lalu meminta iPhone membuka aplikasi. Build menggunakan target/SDK iPhone sehingga pemasangan fisik tidak bergantung pada runtime simulator. Jika ada beberapa perangkat, pilih secara eksplisit dengan `npm run ios:install -- --device IDENTIFIER` dari keluaran `xcrun devicectl list devices`.
+
+Jika pemilihan team melalui UI Xcode menambahkan `DEVELOPMENT_TEAM` ke project, pindahkan nilai tersebut ke konfigurasi lokal sebelum membagikan perubahan project. Akun Xcode yang aktif harus memiliki team tersebut; sertifikat lama di Keychain saja tidak cukup.

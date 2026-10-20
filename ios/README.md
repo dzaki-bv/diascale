@@ -24,7 +24,9 @@ Script memakai Xcode di `/Applications/Xcode.app` jika `DEVELOPER_DIR` belum dia
 1. Jalankan `npm run ios:sync` untuk membundel frontend terbaru.
 2. Buka `ios/DiaScale.xcodeproj` di Xcode.
 3. Pilih target DiaScale, lalu Apple development team di Signing & Capabilities.
-4. Sambungkan iPhone, pilih sebagai run destination, dan jalankan dari Xcode.
+4. Sambungkan iPhone, selesaikan Trust dan Developer Mode, pilih sebagai run destination, lalu jalankan dari Xcode.
+
+Untuk instalasi ulang melalui terminal, isi `Signing.local.xcconfig` dari file `.example`, lalu jalankan `npm run ios:check` dan `npm run ios:install`. Konfigurasi team lokal diabaikan Git. Script instalasi memverifikasi signature dan memakai perangkat yang terdeteksi; jika lebih dari satu, wajib memilih `--device IDENTIFIER`. Lihat `docs/ios-signing.md` untuk langkah lengkap.
 
 Build perangkat tanpa signing bukan IPA yang siap dipasang. Instalasi fisik memerlukan provisioning/signing Apple yang sesuai; tidak ada sertifikat atau profil provisioning yang disimpan di repo. Untuk simulator, pasang runtime iOS melalui Xcode terlebih dahulu dan gunakan `.app` simulator.
 

@@ -1,0 +1,4 @@
+// Copy to Signing.local.xcconfig; this local file is ignored by Git.
+// Find Team ID in your selected team under Xcode signing settings.
+DEVELOPMENT_TEAM = YOURTEAMID
+PRODUCT_BUNDLE_IDENTIFIER = id.yourname.diascale.preview

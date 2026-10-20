@@ -1,0 +1,4 @@
+// Shared defaults. Apple team and any local identifier stay outside Git.
+CODE_SIGN_STYLE = Automatic
+PRODUCT_BUNDLE_IDENTIFIER = com.diascale.app
+#include? "Signing.local.xcconfig"
