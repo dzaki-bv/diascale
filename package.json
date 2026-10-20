@@ -9,7 +9,10 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4174 --strictPort",
     "format": "prettier --write src index.html package.json vite.config.js scripts docs README.md",
-    "android:build": "npm run build && node scripts/sync-android.mjs && cd android && ./gradlew assembleDebug"
+    "android:build": "npm run build && node scripts/sync-android.mjs && cd android && ./gradlew assembleDebug",
+    "ios:sync": "npm run build && node scripts/sync-ios.mjs",
+    "ios:build": "npm run ios:sync && node scripts/build-ios.mjs",
+    "ios:build:device": "npm run ios:sync && node scripts/build-ios.mjs --device"
   },
   "devDependencies": {
     "prettier": "^3.9.10",

@@ -19,3 +19,19 @@ Vite production bundling and Android debug APK compilation completed successfull
 The first APK was installed and launched successfully before review. After the review fixes, the final APK also compiled successfully, but its replacement installation could not run because the device disconnected and `adb devices -l` returned no attached devices. Reconnect the phone to install the reviewed build; do not treat the earlier installed APK as the final reviewed version.
 
 The device subsequently reconnected. The final reviewed APK was installed successfully on TECNO CM7 using `adb -s 140892556G002681 install --user 0 -r .../app-debug.apk`; ADB then accepted the launch request for `com.diascale.app/.MainActivity`. No UI tests or inspection followed.
+
+## iOS follow-up review
+
+Baseline: `e3128df`. Two independent source reviews covered the iOS project, offline bundling scripts, package scripts, and ignore rules against the iOS follow-up in `docs/implementation-spec.md`.
+
+### Standards
+
+No substantive findings. Local navigation allowlisting, nonpersistent WKWebView storage, HTML/CSS delimiter escaping, bundled font resolution, SwiftUI safe areas, Xcode resource references, and argument-based build commands were inspected. The simulator artifact receives local ad-hoc signing without an Apple identity; the physical-device build stays unsigned.
+
+### Spec
+
+No findings. The app reuses the approved frontend offline, targets iOS/iPadOS 16+, hides the desktop frame/controls, preserves native safe areas, and introduces no backend or Bluetooth implementation. Documentation distinguishes unsigned iPhone output from an installable signed distribution.
+
+### Build evidence
+
+Both target/SDK builds completed successfully: `iphoneos` and `iphonesimulator`. No iPhone or installed simulator runtime was available. Generic-destination compilation initially failed due to the missing simulator runtime; target/SDK compilation with ordinary PNG icon resources avoids that runtime dependency. The simulator app was ad-hoc signed and both outputs were zipped under `output/ios/`. No tests, UI inspection, simulator launch, or physical installation was performed.

@@ -22,3 +22,7 @@ The user subsequently requested direct installation through ADB. The only connec
 ## Delivery constraints
 
 The user explicitly requested no tests or browser QA; respect that instruction. Compilation and APK packaging are necessary for installation. Perform code review and commit project files only on the current branch, as requested by the implement skill. The enclosing Git repository is rooted at /Users/perry; do not stage unrelated home-directory files, source PDF, dataset, build output, or machine-specific SDK paths.
+
+## iOS follow-up
+
+The user requested an iOS version after Android delivery. Reuse the approved frontend in a SwiftUI/WKWebView app supporting iOS 16+, with bundled offline content/fonts, native safe areas, no duplicate desktop frame or controls, and no backend/native Bluetooth integration. Prepare an Xcode project plus simulator and unsigned device builds. Do not claim physical installation or a signed distributable without an attached device and Apple provisioning. Keep the user's no-tests/no-UI-QA instruction.

@@ -44,3 +44,12 @@ Sesuai permintaan pengguna, tidak ditambahkan atau dijalankan tes maupun pemerik
 - `src/ui/`: elemen antarmuka, ikon, serta pemformatan.
 - `android/`: shell Android dan konfigurasi build.
 - `docs/implementation-spec.md`: keputusan produk dan batas implementasi.
+
+## iOS
+
+```sh
+npm run ios:build
+npm run ios:build:device
+```
+
+Project Xcode: `ios/DiaScale.xcodeproj`. Build simulator dan iPhone ada di `ios/build/Build/Products/`. Build iPhone belum ditandatangani; pemasangan fisik memerlukan Apple development team dan provisioning yang sesuai di Xcode. Lihat `ios/README.md` untuk langkah lengkap. Versi iOS membundel UI dan font yang sama secara offline, tanpa server.
