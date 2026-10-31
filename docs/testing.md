@@ -8,7 +8,7 @@ The user explicitly requested tests on 2026-10-21, superseding the earlier no-te
 npm test
 ```
 
-The command builds the current frontend, creates the offline iOS HTML, then runs Node's test runner. Individual suites can be run with `node --test app/tests/model.test.mjs`, `node --test app/tests/app.test.mjs`, `node --test tests/ios-bundle.test.mjs`, and `node --test tests/ios-device.test.mjs`. The app suite requires a fresh `npm run ios:sync` after frontend edits.
+The command builds the current frontend, creates the offline iOS HTML, then runs Node's test runner. Individual suites can be run with `node --test app/tests/model.test.mjs`, `node --test app/tests/app.test.mjs`, `node --test tests/ios-bundle.test.mjs`, and `node --test tests/ios-device.test.mjs`. The app suite requires a fresh `npm run ios:sync` after frontend edits. The `packages/core` suites (protocol, session, body composition, score and measurement record) run with `npm test -w packages/core`.
 
 ## Behavior boundaries
 

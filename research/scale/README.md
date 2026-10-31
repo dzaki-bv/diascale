@@ -51,5 +51,6 @@ Python 3.13+ (for `math.fma`). Install with `python3 -m venv venv && venv/bin/pi
 | --- | --- |
 | `compare_fat.py` | BIA fat % versus RFM from the scale's waist estimate |
 | `att_dump.py` | dump ATT traffic from an Android `btsnoop_hci.log` |
+| `export_body_vectors.py` | golden vectors (girth on, adults) and tables for `packages/core/src/body.ts`: `python3 export_body_vectors.py ../../../packages/core/test/fixtures/body.json` |
 
 `probe/` is the Android GATT probe used for the captures; start it with `adb shell am start -n dev.diascale.blescan/.MainActivity --ez handshake true` to send the handshake.

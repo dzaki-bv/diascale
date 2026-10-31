@@ -17,7 +17,7 @@
     "ios:sync": "npm run build && node scripts/sync-ios.mjs",
     "ios:build": "npm run ios:sync && node scripts/build-ios.mjs",
     "ios:build:device": "npm run ios:sync && node scripts/build-ios.mjs --device",
-    "test": "npm run ios:sync && node --test tests/*.test.mjs app/tests/*.test.mjs",
+    "test": "npm run ios:sync && node --test tests/*.test.mjs app/tests/*.test.mjs packages/core/test/*.test.ts",
     "test:unit": "node --test app/tests/model.test.mjs",
     "ios:check": "node scripts/ios-device.mjs --check",
     "ios:install": "node scripts/ios-device.mjs --install"
