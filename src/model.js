@@ -5,6 +5,7 @@ export const variant = "A";
 export const sampleProfile = {
   name: "Nadia Putri",
   birth: "1992-05-14",
+  sex: "Perempuan",
   height: "162",
   waist: "84",
   meds: "Tidak",
@@ -16,6 +17,7 @@ export function emptyProfile() {
   return {
     name: "",
     birth: "",
+    sex: "",
     height: "",
     waist: "",
     meds: "",
@@ -42,6 +44,18 @@ export const state = {
   otpSentAt: 0,
 };
 
+// Scale visceral fat level (1–20) to its share of the risk score (max 40 points).
+// Cut-offs per sex best reproduce the paper's waist-based visceral points on NHANES.
+const visceralCutoffs = {
+  "Laki-laki": [6, 7, 9, 11],
+  Perempuan: [10, 12, 14, 16],
+};
+export function visceralPoints(level, sex) {
+  const cutoffs = visceralCutoffs[sex];
+  if (!cutoffs) throw new Error(`Jenis kelamin tidak dikenal: ${sex}`);
+  return [0, 10, 20, 30, 40][cutoffs.filter((cut) => level >= cut).length];
+}
+
 // These are coherent example fixtures, not a diabetes risk calculation.
 // Contributions are captured with each result rather than rebuilt from the current profile.
 export function createExampleRecord(profile, device, options = {}) {
@@ -49,11 +63,12 @@ export function createExampleRecord(profile, device, options = {}) {
   const bmi = +(weight / ((Number(profile.height) || 162) / 100) ** 2).toFixed(
     1,
   );
+  const visceralLevel = options.visceralLevel ?? 14;
   const contributions = [
     {
       label: "Lemak viseral",
-      value: `${options.visceralLevel ?? 12} level`,
-      points: options.visceralPoints ?? 30,
+      value: `${visceralLevel} level`,
+      points: visceralPoints(visceralLevel, profile.sex),
     },
     { label: "Persentase lemak", value: "28,4%", points: 1 },
     {
@@ -89,8 +104,7 @@ export function demoHistory() {
       id: 100 - index,
       date,
       weight: [64.2, 64.6, 65.1, 65.4][index],
-      visceralLevel: 12 + index,
-      visceralPoints: [30, 34, 37, 40][index],
+      visceralLevel: 14 + index,
     });
   });
 }

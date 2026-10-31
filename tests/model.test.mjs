@@ -12,6 +12,7 @@ const {
   clearAccount,
   openAccount,
   demoHistory,
+  visceralPoints,
 } = await import("../src/model.js");
 beforeEach(() => clearAccount());
 
@@ -28,8 +29,40 @@ test("example record keeps raw measurement units and a coherent score", () => {
   assert.equal(record.device, "DS-008");
   assert.deepEqual(
     record.contributions.map((row) => row.value),
-    ["12 level", "28,4%", "24,5 kg/m²", "24,1 kg", "Tidak"],
+    ["14 level", "28,4%", "24,5 kg/m²", "24,1 kg", "Tidak"],
   );
+});
+
+test("visceral level maps to at most 40 risk points with cut-offs per sex", () => {
+  const cases = {
+    "Laki-laki": [
+      [1, 0],
+      [5, 0],
+      [6, 10],
+      [7, 20],
+      [8, 20],
+      [9, 30],
+      [10, 30],
+      [11, 40],
+      [20, 40],
+    ],
+    Perempuan: [
+      [1, 0],
+      [9, 0],
+      [10, 10],
+      [11, 10],
+      [12, 20],
+      [13, 20],
+      [14, 30],
+      [15, 30],
+      [16, 40],
+      [20, 40],
+    ],
+  };
+  for (const [sex, rows] of Object.entries(cases))
+    for (const [level, points] of rows)
+      assert.equal(visceralPoints(level, sex), points, `${sex} level ${level}`);
+  assert.throws(() => visceralPoints(10, ""));
 });
 
 test("antihypertensive answer is captured with its own contribution", () => {
@@ -101,7 +134,7 @@ test("demo history is recent and each risk total agrees with its contribution ro
   assert.equal(records.length, 4);
   assert.deepEqual(
     records.map((record) => record.score),
-    [51, 55, 58, 61],
+    [51, 51, 61, 61],
   );
   assert.ok(Date.now() - records[0].date.getTime() < 60000);
   for (const record of records)

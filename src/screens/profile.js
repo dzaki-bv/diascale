@@ -8,6 +8,7 @@ export function profile() {
       "Tanggal lahir",
       state.profile.birth ? dateText(state.profile.birth) : "—",
     ],
+    ["Jenis kelamin", state.profile.sex || "—"],
     ["Tinggi badan", `${state.profile.height} cm`],
     ["Lingkar pinggang", `${state.profile.waist} cm`],
   ]

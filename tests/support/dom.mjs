@@ -105,6 +105,7 @@ export function completeSignup(
     waist: "84",
   }))
     app.fill(field, value);
+  app.answer("sex", "Perempuan");
   app.submit("personal-form");
   app.answer("meds", meds);
   app.answer("glucose", "Tidak");

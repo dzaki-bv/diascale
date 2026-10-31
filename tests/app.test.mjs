@@ -54,6 +54,9 @@ test("signup requires OTP, all personal fields, and every health answer", async 
   }))
     app.fill(name, value);
   app.submit("personal-form");
+  assert.equal(app.screen(), "personal");
+  app.answer("sex", "Perempuan");
+  app.submit("personal-form");
   assert.equal(app.screen(), "health");
   app.answer("meds", "Tidak");
   app.answer("glucose", "Tidak tahu");
