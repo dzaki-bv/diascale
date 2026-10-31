@@ -1,0 +1,7 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'dev.diascale.blescan'
+    compileSdk 36
+    defaultConfig { applicationId 'dev.diascale.blescan'; minSdk 33; targetSdk 36; versionCode 1; versionName '1' }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}

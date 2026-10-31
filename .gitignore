@@ -14,3 +14,6 @@ ios/DiaScale/Web/
 *.xcuserstate
 ios/Signing.local.xcconfig
 ios/build-signed/
+
+# iComon native libraries used by research/scale tools are supplied locally, never committed.
+research/scale/lib/

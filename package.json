@@ -3,28 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "app",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 4173 --strictPort",
-    "prototype": "vite --host 127.0.0.1 --port 4173 --strictPort --open /prototype/",
-    "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 4174 --strictPort",
-    "format": "prettier --write src index.html package.json vite.config.js scripts docs README.md",
+    "dev": "npm run dev -w app",
+    "prototype": "npm run prototype -w app",
+    "build": "npm run build -w app",
+    "preview": "npm run preview -w app",
+    "format": "prettier --write app/src app/index.html app/vite.config.js app/tests packages package.json scripts docs README.md",
     "android:build": "npm run build && node scripts/sync-android.mjs && cd android && ./gradlew assembleDebug",
     "ios:sync": "npm run build && node scripts/sync-ios.mjs",
     "ios:build": "npm run ios:sync && node scripts/build-ios.mjs",
     "ios:build:device": "npm run ios:sync && node scripts/build-ios.mjs --device",
-    "test": "npm run ios:sync && node --test tests/*.test.mjs",
-    "test:unit": "node --test tests/model.test.mjs",
+    "test": "npm run ios:sync && node --test tests/*.test.mjs app/tests/*.test.mjs",
+    "test:unit": "node --test app/tests/model.test.mjs",
     "ios:check": "node scripts/ios-device.mjs --check",
     "ios:install": "node scripts/ios-device.mjs --install"
   },
   "devDependencies": {
     "jsdom": "^30.1.3",
-    "prettier": "^3.9.10",
-    "vite": "^8.3.4"
-  },
-  "dependencies": {
-    "@fontsource-variable/dm-sans": "^5.3.0",
-    "@fontsource-variable/manrope": "^5.3.0"
+    "prettier": "^3.9.10"
   }
 }

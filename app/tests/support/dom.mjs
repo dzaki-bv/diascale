@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { JSDOM, VirtualConsole } from "jsdom";
 import assert from "node:assert/strict";
 
-const htmlPath = new URL("../../ios/DiaScale/Web/index.html", import.meta.url);
+const htmlPath = new URL("../../../ios/DiaScale/Web/index.html", import.meta.url);
 
 export async function openApp() {
   const errors = [];

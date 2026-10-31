@@ -38,12 +38,18 @@ Tes otomatis kini tersedia melalui `npm test`, sesuai instruksi terbaru pengguna
 
 ## Susunan kode
 
-- `src/app.js`: navigasi dan pengendali interaksi.
-- `src/model.js`: state sesi dan fixture data.
-- `src/screens/`: halaman akun, beranda, pengukuran, risiko, riwayat, dan profil.
-- `src/ui/`: elemen antarmuka, ikon, serta pemformatan.
+Repositori ini memakai npm workspaces.
+
+- `app/src/app.js`: navigasi dan pengendali interaksi.
+- `app/src/model.js`: state sesi dan fixture data.
+- `app/src/screens/`: halaman akun, beranda, pengukuran, risiko, riwayat, dan profil.
+- `app/src/ui/`: elemen antarmuka, ikon, serta pemformatan.
+- `app/tests/`: tes model dan alur antarmuka.
+- `packages/core/`: protokol timbangan, algoritma komposisi tubuh, dan skor risiko (TypeScript, dipakai app dan server).
+- `research/scale/`: alat dan catatan pembongkaran timbangan LUCA VOSS FG2504WB.
 - `android/`: shell Android dan konfigurasi build.
 - `docs/implementation-spec.md`: keputusan produk dan batas implementasi.
+- `docs/scale-integration-spec.md` dan `docs/scale-integration-plan.md`: keputusan dan rencana integrasi timbangan.
 
 ## iOS
 
