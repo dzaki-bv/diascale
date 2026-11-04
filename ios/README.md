@@ -1,37 +1,39 @@
 # DiaScale iOS
 
-Shell SwiftUI + WKWebView untuk frontend DiaScale yang sama dengan versi web dan Android. Mendukung iOS/iPadOS 16 ke atas. Aset, font, CSS, dan JavaScript disertakan di dalam aplikasi; tidak membutuhkan server atau koneksi jaringan.
+Proyek Capacitor 8 dengan plugin Bluetooth LE, Preferences, dan App. Identitas default `com.diascale.app`, target/scheme `App`, produk `DiaScale.app`, minimum iOS 16. Aset frontend dan font disertakan dalam aplikasi; perhitungan dan penyimpanan berjalan offline.
 
 ## Build
 
-Dari direktori utama proyek:
+Dari root proyek:
 
 ```sh
 npm install
+npm run ios:sync
 npm run ios:build
 npm run ios:build:device
 ```
 
-Output:
+`ios:sync` membangun Vite dan menjalankan `cap sync ios` dari workspace `app`. `ios:build` menghasilkan aplikasi simulator dengan ad-hoc signing. `ios:build:device` menghasilkan build iPhone unsigned. Output berada di `ios/build/Build/Products/Debug-iphonesimulator/DiaScale.app` dan `Debug-iphoneos/DiaScale.app`.
 
-- Simulator: `ios/build/Build/Products/Debug-iphonesimulator/DiaScale.app` (ad-hoc signing lokal, tanpa akun Apple).
-- iPhone/iPad: `ios/build/Build/Products/Debug-iphoneos/DiaScale.app` (belum ditandatangani).
+Xcode menggunakan Swift Package Manager untuk Capacitor dan plugin. Build awal memerlukan jaringan untuk mengambil dependensi. SDK dan komponen platform/runtime simulator yang cocok harus terpasang di Xcode → Settings → Components. Jika Xcode melaporkan “iOS Platform Not Installed” meski SDK muncul di `xcodebuild -showsdks`, selesaikan instalasi komponen tersebut. Bluetooth tidak tersedia di simulator; jangan memakai simulator sebagai bukti penerimaan timbangan.
 
-Script memakai Xcode di `/Applications/Xcode.app` jika `DEVELOPER_DIR` belum diatur. SDK Xcode diperlukan; build target/SDK tidak memerlukan simulator yang sedang berjalan atau iPhone yang tersambung.
+## Signing dan pemasangan
 
-## Memasang ke iPhone
+Buka `ios/App/App.xcodeproj`, pilih scheme `App`, dan pilih perangkat yang sesuai. `ios/debug.xcconfig` memuat `ios/Signing.xcconfig`, yang memuat override opsional `Signing.local.xcconfig` (diabaikan Git). Team dan identifier lokal dari wrapper lama dipertahankan; ikon dipindahkan ke asset catalog Capacitor.
 
-1. Jalankan `npm run ios:sync` untuk membundel frontend terbaru.
-2. Buka `ios/DiaScale.xcodeproj` di Xcode.
-3. Pilih target DiaScale, lalu Apple development team di Signing & Capabilities.
-4. Sambungkan iPhone, selesaikan Trust dan Developer Mode, pilih sebagai run destination, lalu jalankan dari Xcode.
+```sh
+npm run ios:check
+npm run ios:install
+```
 
-Untuk instalasi ulang melalui terminal, isi `Signing.local.xcconfig` dari file `.example`, lalu jalankan `npm run ios:check` dan `npm run ios:install`. Konfigurasi team lokal diabaikan Git. Script instalasi memverifikasi signature dan memakai perangkat yang terdeteksi; jika lebih dari satu, wajib memilih `--device IDENTIFIER`. Lihat `docs/ios-signing.md` untuk langkah lengkap.
+Jika ada beberapa perangkat, pilih `--device IDENTIFIER`. Installer memilih destination yang sama saat build, memverifikasi signature dan provisioning perangkat, lalu memasang aplikasi. Lihat [panduan signing](../docs/ios-signing.md). Saat ini tidak ada iPhone tersambung untuk pengujian fisik.
 
-Build perangkat tanpa signing bukan IPA yang siap dipasang. Instalasi fisik memerlukan provisioning/signing Apple yang sesuai; tidak ada sertifikat atau profil provisioning yang disimpan di repo. Untuk simulator, pasang runtime iOS melalui Xcode terlebih dahulu dan gunakan `.app` simulator.
+## Implementasi
 
-## Catatan implementasi
+Capacitor menyediakan bridge native dan memuat aset lokal melalui origin `capacitor://localhost`. `NSBluetoothAlwaysUsageDescription` menjelaskan akses Bluetooth. `PrivacyInfo.xcprivacy` menyatakan penggunaan UserDefaults oleh Preferences. Pengukuran dibatalkan saat aplikasi masuk latar belakang; antrean pengiriman dicoba kembali saat aktif.
 
-`npm run ios:sync` menyisipkan JavaScript, CSS, dan font hasil Vite ke satu HTML lokal. JavaScript dijalankan setelah DOM siap tanpa ES module request melalui file URL, sehingga tidak membutuhkan server localhost atau pengecualian keamanan WebKit. WKWebView hanya mengizinkan navigasi utama ke halaman lokal aplikasi dan memakai penyimpanan web nonpersisten. Safe area iOS dipertahankan dan bingkai HP desktop disembunyikan.
+Tidak ada lagi wrapper SwiftUI/WKWebView atau HTML inline buatan sendiri. Tes DOM membundel ulang graph Vite produksi untuk jsdom dan meniru bridge Capacitor, bukan menggantikan Safari atau pengujian native. Pengukuran langsung dan deployment ditunda sesuai instruksi pengguna.
 
-UI dan state mengikuti frontend yang disepakati: login/signup OTP contoh, formulir wajib, pengukuran contoh, risiko, riwayat, dan profil. Tidak ada backend, SMS, Bluetooth, atau algoritma klinis sungguhan. Data hanya berada dalam memori. Tes otomatis dijalankan dengan `npm test`; cakupannya logika sesi, alur DOM bundel produksi, dan pengemasan offline. UI native iPhone/WKWebView belum diuji tanpa perangkat atau runtime simulator. Panduan signing akun gratis ada di `docs/ios-signing.md`.
+## Verifikasi lokal 1 November 2026
+
+Build unsigned iPhone dan build simulator dengan ad-hoc signing berhasil. Paket arm64-only iOS 26.5 ditolak CoreSimulator; paket universal 23F77 berhasil dipasang. Pemeriksaan peluncuran simulator dihentikan selama migrasi awal karena penggunaan memori/swap dan ruang disk; peluncuran native belum terverifikasi. Simulator uji baru sudah dimatikan dan dikosongkan. Tidak ada pemasangan ke iPhone fisik atau pengukuran langsung.

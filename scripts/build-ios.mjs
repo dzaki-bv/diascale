@@ -10,20 +10,27 @@ if (!env.DEVELOPER_DIR && existsSync(defaultXcode))
   env.DEVELOPER_DIR = defaultXcode;
 const sdk = process.argv.includes("--device") ? "iphoneos" : "iphonesimulator";
 const products = resolve(project, "ios/build/Build/Products");
-// A target/SDK build does not need an installed simulator runtime or a paired iPhone.
+// Generic destinations need no paired phone; Xcode platform components must be installed.
 const args = [
   "-project",
-  "ios/DiaScale.xcodeproj",
-  "-target",
-  "DiaScale",
+  "ios/App/App.xcodeproj",
+  "-scheme",
+  "App",
   "-configuration",
   "Debug",
   "-sdk",
   sdk,
+  "-destination",
+  sdk === "iphoneos"
+    ? "generic/platform=iOS"
+    : "generic/platform=iOS Simulator",
   `CONFIGURATION_BUILD_DIR=${resolve(products, `Debug-${sdk}`)}`,
   `OBJROOT=${resolve(project, "ios/build/Intermediates")}`,
   `SYMROOT=${products}`,
   "CODE_SIGNING_ALLOWED=NO",
+  ...(sdk === "iphonesimulator"
+    ? [`ARCHS=${process.arch === "arm64" ? "arm64" : "x86_64"}`]
+    : []),
   "build",
   "-quiet",
 ];

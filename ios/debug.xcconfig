@@ -1,0 +1,2 @@
+CAPACITOR_DEBUG[config=Debug] = true
+#include "Signing.xcconfig"

@@ -95,11 +95,13 @@ try {
     const derived = resolve(root, "ios/build-signed");
     run("xcodebuild", [
       "-project",
-      "ios/DiaScale.xcodeproj",
-      "-target",
-      "DiaScale",
+      "ios/App/App.xcodeproj",
+      "-scheme",
+      "App",
       "-sdk",
       "iphoneos",
+      "-destination",
+      `id=${identifier}`,
       "-configuration",
       "Debug",
       `CONFIGURATION_BUILD_DIR=${resolve(derived, "Build/Products/Debug-iphoneos")}`,
