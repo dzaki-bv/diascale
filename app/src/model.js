@@ -1,155 +1,168 @@
-export const params = new URLSearchParams(location.search);
+import { ageOn } from "@diascale/core";
+
 export const riskStyle = "porcelain";
 export const variant = "A";
-
-export const sampleProfile = {
-  name: "Nadia Putri",
-  birth: "1992-05-14",
-  sex: "Perempuan",
-  height: "162",
-  waist: "84",
-  meds: "Tidak",
-  glucose: "Tidak",
-  family: "Ya",
-};
-
-export function emptyProfile() {
-  return {
-    name: "",
-    birth: "",
-    sex: "",
-    height: "",
-    waist: "",
-    meds: "",
-    glucose: "",
-    family: "",
-  };
-}
-
+export const emptyProfile = () => ({
+  name: "",
+  birth: "",
+  sex: "",
+  height: "",
+  meds: "",
+  glucose: "",
+  family: "",
+});
 export const state = {
-  screen: params.get("screen") || "welcome",
+  screen: "welcome",
   mode: "signup",
   phone: "",
   profile: emptyProfile(),
   history: [],
   selected: null,
   returnTo: "home",
-  device: "DS-001",
-  scenario: "multiple",
-  failure: "none",
+  devices: [],
+  device: null,
   period: "month",
   stage: 0,
+  weightKg: null,
   editing: false,
+  busy: false,
   toast: "",
-  otpSentAt: 0,
+  failureReason: "",
+  unsaved: null,
+  syncText: "",
 };
-
-// Scale visceral fat level (1–20) to its share of the risk score (max 40 points).
-// Cut-offs per sex best reproduce the paper's waist-based visceral points on NHANES.
-const visceralCutoffs = {
-  "Laki-laki": [6, 7, 9, 11],
-  Perempuan: [10, 12, 14, 16],
-};
-export function visceralPoints(level, sex) {
-  const cutoffs = visceralCutoffs[sex];
-  if (!cutoffs) throw new Error(`Jenis kelamin tidak dikenal: ${sex}`);
-  return [0, 10, 20, 30, 40][cutoffs.filter((cut) => level >= cut).length];
+let store;
+export function initModel(repository) {
+  store = repository;
+  const phone = store.snapshot().activePhone;
+  if (phone && openAccount(phone)) state.screen = "home";
 }
-
-// These are coherent example fixtures, not a diabetes risk calculation.
-// Contributions are captured with each result rather than rebuilt from the current profile.
-export function createExampleRecord(profile, device, options = {}) {
-  const weight = options.weight ?? 64.2;
-  const bmi = +(weight / ((Number(profile.height) || 162) / 100) ** 2).toFixed(
-    1,
-  );
-  const visceralLevel = options.visceralLevel ?? 14;
-  const contributions = [
-    {
-      label: "Lemak viseral",
-      value: `${visceralLevel} level`,
-      points: visceralPoints(visceralLevel, profile.sex),
-    },
-    { label: "Persentase lemak", value: "28,4%", points: 1 },
-    {
-      label: "BMI",
-      value: `${bmi.toFixed(1).replace(".", ",")} kg/m²`,
-      points: 20,
-    },
-    { label: "Massa otot", value: "24,1 kg", points: 0 },
-    {
-      label: "Obat antihipertensi",
-      value: profile.meds,
-      points: profile.meds === "Ya" ? 5 : 0,
-    },
-  ];
-  return {
-    id: options.id ?? Date.now(),
-    date: options.date ?? new Date(),
-    weight,
-    bmi,
-    risk: "Sedang",
-    score: contributions.reduce((total, row) => total + row.points, 0),
-    device,
-    profile: { ...profile },
-    contributions,
-  };
-}
-
-export function demoHistory() {
-  return [0, 1, 2, 3].map((index) => {
-    const date = new Date();
-    date.setDate(date.getDate() - index * 7);
-    return createExampleRecord(sampleProfile, "DS-001", {
-      id: 100 - index,
-      date,
-      weight: [64.2, 64.6, 65.1, 65.4][index],
-      visceralLevel: 14 + index,
-    });
-  });
-}
-
-// Session-only accounts keep local health data separated by normalized phone number.
-const accounts = new Map();
 export function normalizePhone(value) {
   return value.replace(/\D/g, "").replace(/^(?:62|0)/, "");
 }
-function copyHistory(records) {
-  return records.map((record) => ({
-    ...record,
-    date: new Date(record.date),
-    profile: { ...record.profile },
-    contributions: record.contributions.map((row) => ({ ...row })),
-  }));
+export function toProfile() {
+  return {
+    name: state.profile.name.trim(),
+    phone: state.phone,
+    birthDate: state.profile.birth,
+    sex: state.profile.sex === "Laki-laki" ? "male" : "female",
+    heightCm: Number(state.profile.height),
+    antihypertensive: state.profile.meds === "Ya",
+    familyHistory: state.profile.family === "Ya",
+    highGlucose: state.profile.glucose === "Ya",
+  };
 }
-export function saveAccount() {
-  if (!state.phone || !state.profile.name) return;
-  accounts.set(normalizePhone(state.phone), {
-    profile: { ...state.profile },
-    history: copyHistory(state.history),
+export function formProfile(profile) {
+  return {
+    name: profile.name,
+    birth: profile.birthDate,
+    sex: profile.sex === "male" ? "Laki-laki" : "Perempuan",
+    height: String(profile.heightCm),
+    meds: profile.antihypertensive ? "Ya" : "Tidak",
+    family: profile.familyHistory ? "Ya" : "Tidak",
+    glucose: profile.highGlucose ? "Ya" : "Tidak",
+  };
+}
+export function isAdult(birth, at = new Date()) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birth)) return false;
+  const [y, m, d] = birth.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  if (
+    date.getFullYear() !== y ||
+    date.getMonth() !== m - 1 ||
+    date.getDate() !== d
+  )
+    return false;
+  const age = ageOn(birth, at.toISOString());
+  return age >= 18 && age <= 127;
+}
+export function adultBirthMax() {
+  const now = new Date();
+  const year = now.getFullYear() - 18;
+  const day = Math.min(
+    now.getDate(),
+    new Date(year, now.getMonth() + 1, 0).getDate(),
+  );
+  return `${year}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+const decimal = (value) => value.toFixed(1).replace(".", ",");
+export function viewMeasurement(m) {
+  return {
+    id: m.id,
+    date: m.measuredAt,
+    weight: m.inputs.weightKg,
+    bmi: m.numbers.bmi,
+    risk: m.score.category,
+    score: m.score.total,
+    device: "FG2504WB",
+    profile: formProfile(m.profile),
+    raw: m,
+    contributions: [
+      {
+        label: "Lemak viseral",
+        value: decimal(m.numbers.visceral),
+        points: m.score.points.visceral,
+      },
+      {
+        label: "Persentase lemak",
+        value: `${decimal(m.fatPercent)}%`,
+        points: m.score.points.fat,
+      },
+      {
+        label: "BMI",
+        value: `${decimal(m.numbers.bmi)} kg/m²`,
+        points: m.score.points.bmi,
+      },
+      {
+        label: "Massa otot",
+        value: `${decimal(m.numbers.muscleKg)} kg`,
+        points: m.score.points.muscle,
+      },
+      {
+        label: "Obat antihipertensi",
+        value: m.profile.antihypertensive ? "Ya" : "Tidak",
+        points: m.score.points.antihypertensive,
+      },
+    ],
+  };
+}
+export function openAccount(phone) {
+  const key = normalizePhone(phone);
+  const account = store.snapshot().accounts[key];
+  if (!account) return false;
+  state.phone = key;
+  state.profile = formProfile(account.profile);
+  state.history = account.history.map(viewMeasurement);
+  state.selected = null;
+  state.editing = false;
+  return true;
+}
+export async function saveAccount() {
+  await store.saveProfile(state.phone, toProfile());
+}
+export async function clearAccount() {
+  await store.update((data) => {
+    data.activePhone = null;
   });
+  state.profile = emptyProfile();
+  state.phone = "";
+  state.history = [];
+  state.selected = null;
+  state.editing = false;
+  state.toast = "";
+  state.unsaved = null;
 }
-export function clearAccount() {
+export function beginSignup(phone) {
+  state.phone = normalizePhone(phone);
   state.profile = emptyProfile();
   state.history = [];
   state.selected = null;
-  state.phone = "";
   state.editing = false;
-  state.returnTo = "home";
-  state.toast = "";
 }
-export function openAccount(phone, mode) {
-  const saved = accounts.get(normalizePhone(phone));
-  state.selected = null;
-  state.editing = false;
-  if (saved) {
-    state.profile = { ...saved.profile };
-    state.history = copyHistory(saved.history);
-  } else if (mode === "login") {
-    state.profile = { ...sampleProfile };
-    state.history = demoHistory();
-  } else {
-    state.profile = emptyProfile();
-    state.history = [];
-  }
+export async function saveMeasurement(measurement) {
+  await store.saveMeasurement(state.phone, measurement);
+  state.history = store
+    .snapshot()
+    .accounts[state.phone].history.map(viewMeasurement);
+  state.selected = state.history.find((record) => record.id === measurement.id);
 }

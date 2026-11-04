@@ -10,7 +10,6 @@ export function profile() {
     ],
     ["Jenis kelamin", state.profile.sex || "—"],
     ["Tinggi badan", `${state.profile.height} cm`],
-    ["Lingkar pinggang", `${state.profile.waist} cm`],
   ]
     .map(
       ([a, b]) =>
@@ -27,5 +26,5 @@ export function profile() {
     )
     .join(
       "",
-    )}<div class="form-actions">${button("Keluar dari akun", "logout", "secondary", "logout")}</div>`;
+    )}<p class="small muted" role="status">${esc(state.syncText)}</p><div class="form-actions">${button("Keluar dari akun", "logout", "secondary", "logout")}</div>`;
 }

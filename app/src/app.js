@@ -1,23 +1,31 @@
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/manrope";
 import "./style.css";
+import { Capacitor } from "@capacitor/core";
+import { Preferences } from "@capacitor/preferences";
+import { App } from "@capacitor/app";
+import { BleClient } from "@capacitor-community/bluetooth-le";
+import { LocalStore } from "./storage.ts";
+import { SyncEngine } from "./sync.ts";
+import { ScaleAdapter } from "./scale.ts";
 import { icon, logo } from "./ui/icons.js";
 import { esc } from "./ui/format.js";
 import {
-  params,
   variant,
-  sampleProfile,
   state,
-  demoHistory,
-  createExampleRecord,
+  initModel,
   normalizePhone,
   saveAccount,
   clearAccount,
   openAccount,
+  beginSignup,
+  toProfile,
+  isAdult,
+  saveMeasurement,
 } from "./model.js";
 import { nav } from "./ui/components.js";
 import { home } from "./screens/home.js";
-import { welcome, auth, otp, personal, health } from "./screens/account.js";
+import { welcome, auth, personal, health } from "./screens/account.js";
 import {
   scan,
   devices,
@@ -28,37 +36,15 @@ import { result } from "./screens/results.js";
 import { history } from "./screens/history.js";
 import { profile } from "./screens/profile.js";
 
-let timers = [];
-
-function clearTimers() {
-  timers.forEach(clearTimeout);
-  timers = [];
-}
-
-function later(fn, ms) {
-  timers.push(setTimeout(fn, ms));
-}
-
-function go(screen) {
-  clearTimers();
-  state.screen = screen;
-  render();
-  document.querySelector(".screen")?.scrollTo(0, 0);
-}
-
-function toast(message) {
-  state.toast = message;
-  render();
-  later(() => {
-    state.toast = "";
-    render();
-  }, 2400);
-}
-
+const store = new LocalStore(Preferences);
+const scale = new ScaleAdapter(BleClient);
+let sync;
+let operation = 0;
+let toastTimer;
+let initialized = false;
 const screens = {
   welcome,
   auth,
-  otp,
   personal,
   health,
   home,
@@ -73,240 +59,352 @@ const screens = {
   "measure-error": errorScreen,
 };
 
-function pagePicker() {
-  const pages = [
-    ["welcome", "Halaman awal"],
-    ["auth", "Masuk / daftar"],
-    ["otp", "Verifikasi OTP"],
-    ["personal", "Data diri"],
-    ["health", "Riwayat kesehatan"],
-    ["home", "Beranda"],
-    ["devices", "Pilih timbangan"],
-    ["scan-single", "Cari · 1 timbangan"],
-    ["scan-multiple", "Cari · beberapa timbangan"],
-    ["scan-none", "Cari · tidak ditemukan"],
-    ["measuring", "Pengukuran"],
-    ["result", "Rincian risiko"],
-    ["history", "Riwayat risiko"],
-    ["profile", "Profil"],
-    ["notfound", "Timbangan tidak ditemukan"],
-    ["connection-error", "Koneksi terputus"],
-    ["measure-error", "Pengukuran gagal"],
-  ];
-  return `<div class="page-picker"><label for="page-jump">Halaman</label><select id="page-jump">${pages.map(([key, label]) => `<option value="${key}" ${state.screen === key ? "selected" : ""}>${label}</option>`).join("")}</select></div>`;
+function go(screen) {
+  ++operation;
+  if (["scan", "devices", "measuring"].includes(state.screen))
+    void scale.cancel();
+  clearTimeout(toastTimer);
+  state.toast = "";
+  state.screen = screen;
+  render();
+  document.querySelector(".screen")?.scrollTo(0, 0);
 }
-
+function toast(message) {
+  state.toast = message;
+  render();
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    state.toast = "";
+    render();
+  }, 3000);
+}
 function render() {
-  let s = screens[state.screen] ? state.screen : "welcome";
+  const s = screens[state.screen] ? state.screen : "welcome";
   const authenticated = ["home", "history", "profile", "result"].includes(s);
   document.getElementById("app").innerHTML =
-    `<div class="shell"><aside class="identity">${logo()}<div class="intro"><div class="eyebrow">Kenali tubuh. Pahami risiko.</div><h1>Langkah kecil.<br><em>Makna besar</em><br>untuk kesehatan.</h1><div class="intro-rule"></div><p>Kenali risiko diabetes tipe 2 melalui data tubuh Anda. Mulai kebiasaan baik, satu pengukuran setiap waktu.</p></div><div class="intro-bottom"><span>${icon("shield")}Personal untuk Anda</span><span>${icon("activity")}Terpantau dari waktu ke waktu</span></div></aside><section class="phone variant-${variant.toLowerCase()}" data-screen="${s}" aria-label="Aplikasi DiaScale"><div class="statusbar"><span>9:41</span><span class="status-icons">${icon("signal")}${icon("wifi")}${icon("battery")}</span></div><main class="screen ${authenticated ? "" : "auth-view"}"><div class="content">${screens[s]()}</div></main>${authenticated ? nav() : ""}${state.toast ? `<div class="toast" role="status">${esc(state.toast)}</div>` : ""}<div class="home-indicator"></div></section></div>${pagePicker()}`;
+    `<div class="shell"><aside class="identity">${logo()}<div class="intro"><div class="eyebrow">Kenali tubuh. Pahami risiko.</div><h1>Langkah kecil.<br><em>Makna besar</em><br>untuk kesehatan.</h1><div class="intro-rule"></div><p>Kenali risiko diabetes tipe 2 melalui data tubuh Anda. Mulai kebiasaan baik, satu pengukuran setiap waktu.</p></div><div class="intro-bottom"><span>${icon("shield")}Personal untuk Anda</span><span>${icon("activity")}Terpantau dari waktu ke waktu</span></div></aside><section class="phone variant-${variant.toLowerCase()}" data-screen="${s}" aria-label="Aplikasi DiaScale"><div class="statusbar"><span>9:41</span><span class="status-icons">${icon("signal")}${icon("wifi")}${icon("battery")}</span></div><main class="screen ${authenticated ? "" : "auth-view"}"><div class="content">${screens[s]()}</div></main>${authenticated ? nav() : ""}${state.toast ? `<div class="toast" role="status">${esc(state.toast)}</div>` : ""}<div class="home-indicator"></div></section></div>`;
+  document.querySelectorAll("button").forEach((button) => {
+    button.disabled = state.busy;
+  });
 }
-
-function startScan() {
+function syncStatus() {
+  const pending = store.snapshot().outgoing;
+  state.syncText = !import.meta.env.VITE_ARCHIVE_URL
+    ? "Hasil tersimpan di perangkat."
+    : pending.some((row) => row.blocked)
+      ? "Hasil tersimpan di perangkat. Sebagian hasil belum dapat dikirim."
+      : pending.length
+        ? `${pending.length} hasil tersimpan, menunggu pengiriman.`
+        : "Semua hasil tersimpan dan terkirim.";
+  if (initialized && state.screen === "profile") render();
+}
+async function startScan() {
+  if (state.unsaved) {
+    state.failureReason =
+      "Hasil terakhir belum tersimpan. Coba simpan kembali sebelum mengukur lagi.";
+    go("measure-error");
+    return;
+  }
+  if (!isAdult(state.profile.birth)) {
+    go("profile");
+    toast(
+      "Perbarui tanggal lahir. DiaScale tersedia untuk usia 18 tahun ke atas.",
+    );
+    return;
+  }
+  state.devices = [];
+  state.failureReason = "";
   go("scan");
-  later(() => {
-    if (state.scenario === "none") go("notfound");
-    else if (state.scenario === "single") connect("DS-001");
+  const current = operation;
+  try {
+    const found = await scale.scan();
+    if (current !== operation) return;
+    state.devices = found;
+    if (!found.length) go("notfound");
+    else if (found.length === 1) await connect(found[0].id);
     else go("devices");
-  }, 1800);
+  } catch {
+    if (current !== operation) return;
+    state.failureReason =
+      "Pencarian belum berhasil. Aktifkan Bluetooth, izinkan akses perangkat sekitar, dan tutup FitDays+ sebelum mencoba lagi.";
+    go("connection-error");
+  }
 }
-
-function connect(device) {
+async function connect(id) {
+  const device = state.devices.find((item) => item.id === id);
+  if (!device) {
+    await startScan();
+    return;
+  }
   state.device = device;
   state.stage = 0;
+  state.weightKg = null;
+  state.failureReason = "";
   go("measuring");
-  later(() => {
-    if (state.failure === "connection") {
-      state.failure = "none";
-      go("connection-error");
-      return;
-    }
-    state.stage = 1;
-    render();
-    later(() => {
-      state.stage = 2;
-      render();
-      later(() => {
-        if (state.failure === "measurement") {
-          state.failure = "none";
-          go("measure-error");
-          return;
-        }
-        state.stage = 3;
+  const current = operation;
+  const profileSnapshot = toProfile();
+  const lastWeight = state.history[0]?.weight ?? 50;
+  await scale.measure(
+    device,
+    profileSnapshot,
+    store.snapshot().userId,
+    lastWeight,
+    (event) => {
+      if (current !== operation) return;
+      if (event.type === "connected") {
+        if (state.stage === 0) state.stage = 1;
         render();
-        later(finishMeasurement, 1800);
-      }, 3200);
-    }, 3200);
-  }, 1500);
+      } else if (event.type === "live") {
+        state.weightKg = event.status === "off" ? null : event.grams / 1000;
+        state.stage =
+          event.status === "off" ? 1 : event.status === "stable" ? 3 : 2;
+        render();
+      } else if (event.type === "failure") {
+        state.failureReason = event.reason;
+        go("measure-error");
+      } else if (event.type === "result") {
+        state.unsaved = event.measurement;
+        void persistResult();
+      }
+    },
+  );
 }
-
-function finishMeasurement() {
-  const record = createExampleRecord(state.profile, state.device);
-  state.history.unshift(record);
-  state.selected = record;
-  state.returnTo = "home";
-  saveAccount();
-  go("result");
+async function persistResult() {
+  if (!state.unsaved || state.busy) return;
+  state.busy = true;
+  state.stage = 4;
+  render();
+  try {
+    await saveMeasurement(state.unsaved);
+    state.unsaved = null;
+    state.returnTo = "home";
+    state.busy = false;
+    go("result");
+    syncStatus();
+    void sync.flush();
+  } catch {
+    state.busy = false;
+    state.failureReason =
+      "Hasil belum dapat disimpan di perangkat. Sediakan ruang penyimpanan, lalu pilih Simpan kembali.";
+    go("measure-error");
+  }
 }
-
-document.addEventListener("click", (e) => {
-  let b = e.target.closest("[data-action]");
-  if (!b) return;
-  let action = b.dataset.action;
+async function handleClick(event) {
+  const button = event.target.closest("[data-action]");
+  if (!button || state.busy || !initialized) return;
+  const action = button.dataset.action;
+  if (state.unsaved && ["signup", "login", "logout", "edit"].includes(action)) {
+    state.failureReason =
+      "Hasil terakhir belum tersimpan. Simpan kembali sebelum mengganti profil atau keluar.";
+    go("measure-error");
+    return;
+  }
   switch (action) {
     case "signup":
     case "login":
-      saveAccount();
-      clearAccount();
       state.mode = action;
+      state.editing = false;
       go("auth");
       break;
     case "scan":
-      startScan();
+      await startScan();
       break;
     case "connect":
-      connect(b.dataset.device);
+      await connect(button.dataset.device);
       break;
     case "retry":
-      connect(state.device);
+      await startScan();
       break;
-    case "resend":
-      state.otpSentAt = Date.now();
-      toast("Kode verifikasi telah dikirim ulang.");
+    case "save-again":
+      await persistResult();
       break;
     case "detail":
-      state.selected = state.history.find((r) => r.id === Number(b.dataset.id));
+      state.selected = state.history.find(
+        (row) => row.id === button.dataset.id,
+      );
       state.returnTo = state.screen;
       go("result");
       break;
     case "period":
-      state.period = b.dataset.period;
+      state.period = button.dataset.period;
       render();
       break;
     case "edit":
       state.editing = true;
       go("personal");
       break;
+    case "profile":
+      if (state.editing) openAccount(state.phone);
+      go("profile");
+      break;
     case "logout":
-      saveAccount();
-      clearAccount();
+      await clearAccount();
       go("welcome");
       break;
     default:
       if (screens[action]) go(action);
   }
+}
+document.addEventListener("click", (event) => {
+  if (event.target.closest('[data-action="reload"]')) {
+    location.reload();
+    return;
+  }
+  void handleClick(event).catch(() => {
+    state.busy = false;
+    toast(
+      "Perubahan belum tersimpan. Periksa penyimpanan perangkat, lalu coba kembali.",
+    );
+  });
 });
-
 document.addEventListener("input", (event) => {
   if (event.target instanceof HTMLInputElement)
     event.target.setCustomValidity("");
 });
-
-document.addEventListener("submit", (e) => {
-  e.preventDefault();
-  let data = Object.fromEntries(new FormData(e.target));
-  switch (e.target.id) {
+document.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (!initialized || state.busy || !event.target.reportValidity()) return;
+  void submit(event.target).catch(() => {
+    state.busy = false;
+    toast(
+      "Perubahan belum tersimpan. Periksa penyimpanan perangkat, lalu coba kembali.",
+    );
+  });
+});
+async function submit(form) {
+  const data = Object.fromEntries(new FormData(form));
+  switch (form.id) {
     case "phone-form": {
       const phone = normalizePhone(data.phone);
-      if (!/^8\d{8,12}$/.test(phone)) {
-        const input = e.target.querySelector('[name="phone"]');
+      if (!/^[+\d ]+$/.test(data.phone) || !/^8\d{8,12}$/.test(phone)) {
+        const input = form.querySelector('[name="phone"]');
         input.setCustomValidity(
           "Masukkan nomor HP yang valid, misalnya 81234567890.",
         );
         input.reportValidity();
         return;
       }
-      state.phone = phone;
-      state.otpSentAt = Date.now();
-      go("otp");
+      if (openAccount(phone)) {
+        await store.update((data) => {
+          data.activePhone = phone;
+        });
+        go("home");
+      } else if (state.mode === "login") {
+        state.phone = phone;
+        toast(
+          "Belum ada profil dengan nomor ini di perangkat. Silakan daftar.",
+        );
+      } else {
+        beginSignup(phone);
+        go("personal");
+      }
       break;
     }
-    case "otp-form":
-      openAccount(state.phone, state.mode);
-      go(state.mode === "login" ? "home" : "personal");
-      break;
     case "personal-form":
+      if (!data.name.trim()) {
+        form
+          .querySelector('[name="name"]')
+          .setCustomValidity("Isi nama lengkap Anda.");
+        form.reportValidity();
+        return;
+      }
+      if (!isAdult(data.birth)) {
+        form
+          .querySelector('[name="birth"]')
+          .setCustomValidity("DiaScale tersedia untuk usia 18 tahun ke atas.");
+        form.reportValidity();
+        return;
+      }
       Object.assign(state.profile, data);
       go("health");
       break;
-    case "health-form":
+    case "health-form": {
       Object.assign(state.profile, data);
-      let editing = state.editing;
+      if (!isAdult(state.profile.birth)) {
+        go("personal");
+        return;
+      }
+      state.busy = true;
+      render();
+      await saveAccount();
+      const editing = state.editing;
       state.editing = false;
-      saveAccount();
+      state.busy = false;
       go(editing ? "profile" : "home");
       if (editing) toast("Profil berhasil diperbarui.");
       break;
+    }
   }
-});
-
-document.addEventListener("change", (e) => {
-  if (e.target.id !== "page-jump") return;
-  const screen = e.target.value;
-  if (!state.profile.name) {
-    state.profile = { ...sampleProfile };
-    state.phone = "812 3456 7890";
-  }
-  if (["result", "history"].includes(screen) && !state.history.length)
-    state.history = demoHistory();
-  if (screen.startsWith("scan-")) {
-    state.scenario = screen.slice(5);
-    startScan();
-    return;
-  }
-  if (screen === "result") {
-    state.selected = state.history[0];
-    state.returnTo = "home";
-  }
-  if (screen === "measuring") {
-    connect(state.device);
-    return;
-  }
-  go(screen);
-});
-
-if (params.get("demo") === "1") {
-  state.profile = { ...sampleProfile };
-  state.phone = "812 3456 7890";
-  state.history = demoHistory();
-  state.screen = params.get("screen") === "result" ? "result" : "home";
 }
-
+function back() {
+  if (state.busy) return true;
+  const button = document.querySelector(".page-top [data-action]");
+  if (button) {
+    button.click();
+    return true;
+  }
+  if (state.screen === "home" || state.screen === "welcome") return false;
+  go(
+    ["auth", "personal", "health"].includes(state.screen) ? "welcome" : "home",
+  );
+  return true;
+}
+window.diascaleBack = back;
 document.body.classList.add("no-tools");
-if (params.get("native") === "1") document.body.classList.add("native-app");
-
-render();
-
+if (Capacitor.isNativePlatform()) document.body.classList.add("native-app");
 function fitCanvas() {
-  const mobile = window.innerWidth <= 480;
-  const reserved = mobile ? 60 : 24;
   const scale = Math.min(
     1,
-    (window.innerHeight - reserved) / 844,
-    (window.innerWidth - (mobile ? 0 : 48)) / 390,
+    (window.innerHeight - 24) / 844,
+    (window.innerWidth - (window.innerWidth <= 480 ? 0 : 48)) / 390,
   );
   document.documentElement.style.setProperty(
     "--phone-scale",
     Math.max(0.1, scale),
   );
 }
-
 window.addEventListener("resize", fitCanvas);
-
 fitCanvas();
-
-window.diascaleBack = () => {
-  const backButton = document.querySelector(".page-top [data-action]");
-  if (backButton instanceof HTMLButtonElement) {
-    backButton.click();
-    return true;
+async function start() {
+  document.getElementById("app").innerHTML =
+    '<p role="status">Membuka data di perangkat…</p>';
+  try {
+    await store.load();
+    initModel(store);
+    sync = new SyncEngine(store, {
+      url: import.meta.env.VITE_ARCHIVE_URL || "",
+      online: () => navigator.onLine,
+      changed: syncStatus,
+    });
+    syncStatus();
+    initialized = true;
+    render();
+    sync.start();
+    window.addEventListener("online", () => void sync.flush());
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") void sync.flush();
+      else if (["scan", "measuring"].includes(state.screen)) {
+        state.failureReason =
+          "Pengukuran dihentikan saat aplikasi ditutup. Buka aplikasi dan ulangi.";
+        go("measure-error");
+      }
+    });
+    if (Capacitor.isNativePlatform()) {
+      await App.addListener("backButton", () => {
+        if (!back()) void App.minimizeApp();
+      });
+      await App.addListener("appStateChange", ({ isActive }) => {
+        if (isActive) void sync.flush();
+        else if (["scan", "measuring"].includes(state.screen)) {
+          state.failureReason =
+            "Pengukuran dihentikan saat aplikasi ditutup. Buka aplikasi dan ulangi.";
+          go("measure-error");
+        }
+      });
+    }
+  } catch {
+    document.getElementById("app").innerHTML =
+      '<main class="content"><h1>Data belum dapat dibuka.</h1><p>Data asli tetap disimpan. Periksa ruang penyimpanan dan konfigurasi aplikasi, lalu coba kembali.</p><button class="btn" data-action="reload">Coba kembali</button></main>';
   }
-  if (state.screen === "home" || state.screen === "welcome") return false;
-  go(
-    ["auth", "otp", "personal", "health"].includes(state.screen)
-      ? "welcome"
-      : "home",
-  );
-  return true;
-};
+}
+void start();

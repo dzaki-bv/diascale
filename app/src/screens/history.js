@@ -1,5 +1,5 @@
 import { icon } from "../ui/icons.js";
-import { dateText } from "../ui/format.js";
+import { dateText, esc } from "../ui/format.js";
 import { state } from "../model.js";
 import { button, header } from "../ui/components.js";
 
@@ -39,5 +39,5 @@ export function history() {
     )
     .join(
       "",
-    )}</div>${records.length ? `<section class="chart-card"><div class="heading-row"><h2 style="font-size:13px">Perubahan skor risiko</h2><span class="small muted">0–100</span></div><div class="history-summary"><strong>${records[0].score}</strong><span>/ 100 · skor risiko terbaru</span></div>${chart(records)}</section><div class="section-head"><h2>Semua hasil penilaian risiko</h2><span class="small muted">${records.length} hasil</span></div>${records.map((r) => `<button class="history-item" data-action="detail" data-id="${r.id}"><div class="history-info"><h3>${dateText(r.date)}</h3><p>Risiko ${r.risk.toLowerCase()}</p></div><div class="history-value"><b>${r.score} <small>/ 100</small></b><p>Skor risiko</p></div>${icon("chevron")}</button>`).join("")}` : `<div class="empty"><div class="icon-box">${icon("history")}</div><h2>${state.history.length ? "Belum ada hasil di periode ini" : "Perjalanan Anda dimulai di sini"}</h2><p>${state.history.length ? "Pilih rentang waktu yang lebih panjang untuk melihat pengukuran sebelumnya." : "Lakukan pengukuran pertama untuk mulai memantau risiko diabetes tipe 2 Anda."}</p>${button("Ukur sekarang", "scan")}</div>`}`;
+    )}</div>${records.length ? `<section class="chart-card"><div class="heading-row"><h2 style="font-size:13px">Perubahan skor risiko</h2><span class="small muted">0–100</span></div><div class="history-summary"><strong>${records[0].score}</strong><span>/ 100 · skor risiko terbaru</span></div>${chart(records)}</section><div class="section-head"><h2>Semua hasil penilaian risiko</h2><span class="small muted">${records.length} hasil</span></div>${records.map((r) => `<button class="history-item" data-action="detail" data-id="${esc(r.id)}"><div class="history-info"><h3>${dateText(r.date)}</h3><p>Risiko ${r.risk.toLowerCase()}</p></div><div class="history-value"><b>${r.score} <small>/ 100</small></b><p>Skor risiko</p></div>${icon("chevron")}</button>`).join("")}` : `<div class="empty"><div class="icon-box">${icon("history")}</div><h2>${state.history.length ? "Belum ada hasil di periode ini" : "Perjalanan Anda dimulai di sini"}</h2><p>${state.history.length ? "Pilih rentang waktu yang lebih panjang untuk melihat pengukuran sebelumnya." : "Lakukan pengukuran pertama untuk mulai memantau risiko diabetes tipe 2 Anda."}</p>${button("Ukur sekarang", "scan")}</div>`}`;
 }

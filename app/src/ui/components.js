@@ -46,5 +46,12 @@ export function nav() {
 }
 
 export function metrics(record) {
-  return `<div class="metrics"><div><div class="metric-label">${icon("scale")}Berat badan</div><div class="metric-value">${record.weight.toFixed(1).replace(".", ",")}<small>kg</small></div></div><div><div class="metric-label">${icon("ruler")}Indeks massa tubuh</div><div class="metric-value">${record.bmi.toFixed(1).replace(".", ",")}<small>kg/m²</small></div></div></div>`;
+  const n = record.raw.numbers;
+  const rows = [
+    ["Indeks massa tubuh", n.bmi, "kg/m²"],
+    ["Massa lemak", n.fatMassKg, "kg"],
+    ["Lemak viseral", n.visceral, ""],
+    ["Massa otot", n.muscleKg, "kg"],
+  ];
+  return `<div class="metrics">${rows.map(([label, value, unit]) => `<div><div class="metric-label">${label}</div><div class="metric-value">${value.toFixed(1).replace(".", ",")}<small>${unit}</small></div></div>`).join("")}</div>`;
 }

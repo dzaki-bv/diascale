@@ -5,7 +5,7 @@ import { button, header, metrics } from "../ui/components.js";
 
 export const homeDetail = (r) =>
   r
-    ? `<button class="text-btn" data-action="detail" data-id="${r.id}">Lihat hasil lengkap ${icon("chevron")}</button>`
+    ? `<button class="text-btn" data-action="detail" data-id="${esc(r.id)}">Lihat hasil lengkap ${icon("chevron")}</button>`
     : "";
 
 export const homeStamp = (r) =>
@@ -27,7 +27,7 @@ export function riskTrend() {
 }
 
 export function VariantA(r) {
-  return `<section class="combined-card clinical-card" aria-label="Risiko dan pengukuran"><p class="risk-title">Risiko diabetes tipe 2</p>${r ? `<div class="combined-risk"><h2>Risiko ${r.risk.toLowerCase()}</h2><span class="badge">${r.score} / 100</span></div><div class="risk-track"></div><div class="track-labels"><span>Rendah</span><span>Sedang</span><span>Tinggi</span></div>${metrics(r)}` : `<h2 class="first-title">Kenali risiko Anda,<br>mulai dari sini.</h2><p class="combined-description">Lakukan pengukuran pertama untuk mengetahui risiko diabetes tipe 2 Anda.</p>`}<div class="combined-action"><p class="measurement-stamp">${r ? icon("clock") : icon("scale")}${homeStamp(r)}</p>${button(r ? "Ukur kembali" : "Ukur sekarang", "scan")}${homeDetail(r)}</div></section>${riskTrend()}`;
+  return `<section class="combined-card clinical-card" aria-label="Risiko dan pengukuran"><p class="risk-title">Risiko diabetes tipe 2</p>${r ? `<div class="combined-risk"><h2>Risiko ${r.risk.toLowerCase()}</h2><span class="badge">${r.score} / 100</span></div><div class="risk-track" style="--risk-position:${r.score}%"></div><div class="track-labels"><span>Aman</span><span>Meningkat</span><span>Waspada</span></div>${metrics(r)}` : `<h2 class="first-title">Kenali risiko Anda,<br>mulai dari sini.</h2><p class="combined-description">Lakukan pengukuran pertama untuk mengetahui risiko diabetes tipe 2 Anda.</p>`}<div class="combined-action"><p class="measurement-stamp">${r ? icon("clock") : icon("scale")}${homeStamp(r)}</p>${button(r ? "Ukur kembali" : "Ukur sekarang", "scan")}${homeDetail(r)}</div></section>${riskTrend()}`;
 }
 
 export function home() {
