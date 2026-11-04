@@ -5,9 +5,9 @@ Panduan ini untuk kondisi saat ini: akun Apple gratis, prototype DiaScale untuk 
 ## Jalur gratis: Personal Team melalui Xcode
 
 1. Siapkan Mac dengan Xcode dan iPhone teman yang akan dipakai. Jalankan `npm run ios:sync` dari direktori proyek agar UI terbaru masuk ke bundel iOS.
-2. Buka `ios/DiaScale.xcodeproj` di Xcode.
+2. Buka `ios/App/App.xcodeproj` di Xcode.
 3. Di **Xcode → Settings → Apple Accounts**, masuk dengan Apple Account untuk pengembangan. Jika memakai akun teman, biarkan teman melakukan login dan autentikasinya sendiri.
-4. Pada target **DiaScale → Signing & Capabilities**, aktifkan **Automatically manage signing**, lalu pilih **Personal Team** yang sesuai.
+4. Pada target **App → Signing & Capabilities**, aktifkan **Automatically manage signing**, lalu pilih **Personal Team** yang sesuai.
 5. Jika bundle identifier `com.diascale.app` tidak tersedia, ganti menjadi identifier unik yang kamu miliki, misalnya `id.namamu.diascale.preview`. Perubahan ini hanya identitas aplikasi, bukan tampilan.
 6. Hubungkan iPhone melalui USB, buka kunci, dan setujui **Trust This Computer** di iPhone jika diminta. Pilih perangkat itu sebagai run destination di Xcode.
 7. Jika Xcode meminta **Developer Mode**, aktifkan di **Settings → Privacy & Security → Developer Mode**, kemudian ikuti restart dan konfirmasi di iPhone. Login/persetujuan ini dilakukan pemilik perangkat.
@@ -34,7 +34,7 @@ npm run ios:check
 npm run ios:install
 ```
 
-`ios:check` memeriksa konfigurasi dan perangkat tanpa menjalankan signing. `ios:install` membundel UI terbaru, membuat build development dengan automatic provisioning, memastikan profil mencakup iPhone terpilih, memverifikasi signature, memasang, lalu meminta iPhone membuka aplikasi. Build menggunakan target/SDK iPhone sehingga pemasangan fisik tidak bergantung pada runtime simulator. Jika ada beberapa perangkat, pilih secara eksplisit dengan `npm run ios:install -- --device IDENTIFIER` dari keluaran `xcrun devicectl list devices`.
+`ios:check` memeriksa konfigurasi dan perangkat tanpa menjalankan signing. `ios:install` membundel UI terbaru, membuat build development dengan automatic provisioning, memastikan profil mencakup iPhone terpilih, memverifikasi signature, memasang, lalu meminta iPhone membuka aplikasi. Build memakai scheme App dan destination iPhone yang dipilih. Xcode memerlukan komponen platform iOS yang sesuai untuk memproses storyboard dan aset Capacitor. Jika ada beberapa perangkat, pilih secara eksplisit dengan `npm run ios:install -- --device IDENTIFIER` dari keluaran `xcrun devicectl list devices`.
 
 Jika pemilihan team melalui UI Xcode menambahkan `DEVELOPMENT_TEAM` ke project, pindahkan nilai tersebut ke konfigurasi lokal sebelum membagikan perubahan project. Akun Xcode yang aktif harus memiliki team tersebut; sertifikat lama di Keychain saja tidak cukup.
 

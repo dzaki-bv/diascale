@@ -2,6 +2,10 @@
 
 Implements `docs/scale-integration-spec.md`. Each phase ends with passing tests and its own commit. Phases 1 and 4 need no phone or scale.
 
+Progress, 1 Nov 2026: Phases 0 and 1 are committed. Phase 2 native migration, Phase 3 app features, Phase 4 archive API and Phase 5 sync are implemented locally and uncommitted. Android debug, unsigned iPhone and ad-hoc-signed iOS simulator builds pass. The required iOS 26.5 universal platform is installed; simulator launch remains unverified because initial CoreSimulator setup exhausted the available resource budget and was stopped. No physical phones are connected. Phase 6 is covered by recorded-packet and local Worker/D1 tests where possible; real weighings and remote delivery remain deferred.
+
+The user authorized all work except direct scale testing and deployment. No remote D1 creation/migration or Worker deployment is performed. Commits are made only when requested.
+
 ## Phase 0 — Monorepo layout
 
 - Switch to npm workspaces: move the Vite app (`index.html`, `src/`, `vite.config.js`, `prototype/`, UI tests) into `app/`; create `packages/core/` and `server/`.

@@ -1,5 +1,7 @@
 # DiaScale frontend and Android handoff
 
+Historical frontend prototype scope. The newer `scale-integration-spec.md` supersedes OTP, example measurements, memory-only storage, waist profile inputs, and the former restrictions on Bluetooth/backend work.
+
 Source of truth: the user's design interview and subsequent screenshot edits in this session. This is a frontend-only implementation of the selected design. No backend, real OTP transport, Bluetooth integration, or validated diabetes risk algorithm is authorized in this scope.
 
 ## User-facing behavior

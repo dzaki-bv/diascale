@@ -12,24 +12,24 @@ DiaScale reads the LUCA VOSS FG2504WB over Bluetooth, computes four required num
 
 ## Required numbers
 
-| Number | Definition |
-| --- | --- |
-| BMI | weight / height² |
-| Fat mass | weight × BIA body fat % / 100 |
-| Visceral | paper formula −182.65 + 3.35 × waist, waist from the girth estimate |
-| Muscle mass | dataset formula 0.46 × (weight − fat mass) |
+| Number      | Definition                                                          |
+| ----------- | ------------------------------------------------------------------- |
+| BMI         | weight / height²                                                    |
+| Fat mass    | weight × BIA body fat % / 100                                       |
+| Visceral    | paper formula −182.65 + 3.35 × waist, waist from the girth estimate |
+| Muscle mass | dataset formula 0.46 × (weight − fat mass)                          |
 
 ## Risk score (`score: diascale@1`)
 
 Rules follow the formulas in `dataset/NHANES_DATARASIO_READY.xlsx` (exported as `dataset/dataset.csv`). Inputs are the displayed, rounded values.
 
-| Component | Points |
-| --- | --- |
-| Visceral | < 100 → 0, < 120 → 10, < 140 → 20, < 160 → 30, else 40 |
-| BMI | ≥ 25 → 20, ≥ 23 → 10, else 0 |
-| Body fat % (BIA) | men < 20 → 0, < 25 → 5, < 30 → 10, < 35 → 15, else 20; women < 30, < 35, < 40, < 45 |
-| Muscle (SMI = muscle mass / height²) | men < 7 → 15, < 8.5 → 7, else 0; women < 5.7 → 15, < 6.5 → 7, else 0 |
-| Antihypertensive medication | Yes → 5 |
+| Component                            | Points                                                                              |
+| ------------------------------------ | ----------------------------------------------------------------------------------- |
+| Visceral                             | < 100 → 0, < 120 → 10, < 140 → 20, < 160 → 30, else 40                              |
+| BMI                                  | ≥ 25 → 20, ≥ 23 → 10, else 0                                                        |
+| Body fat % (BIA)                     | men < 20 → 0, < 25 → 5, < 30 → 10, < 35 → 15, else 20; women < 30, < 35, < 40, < 45 |
+| Muscle (SMI = muscle mass / height²) | men < 7 → 15, < 8.5 → 7, else 0; women < 5.7 → 15, < 6.5 → 7, else 0                |
+| Antihypertensive medication          | Yes → 5                                                                             |
 
 Category: Aman < 40, Meningkat 40–74, Waspada ≥ 75. Family history and high blood glucose are collected and archived but not scored yet. The per-sex visceral level cut-offs previously in `src/model.js` are retired.
 
@@ -41,16 +41,16 @@ Body-composition calculations in TypeScript, including girth estimation. Results
 
 GATT service `FFB0`: write `FFB1`, notify `FFB2`, indicate `FFB3`. Packet layout: `idx, 00, len, 00, payload…, checksum` where checksum = sum(payload) & 0x1F and `len` counts the payload.
 
-| Type | Direction | Meaning |
-| --- | --- | --- |
-| `AA` | scale → app | device info, right after enabling `FFB3` |
-| `A2` | scale → app (`FFB2`) | live weight: grams in payload bytes 3–5 (big-endian); status 01 measuring, 03 stable, 00 stepped off |
-| `A7` | scale → app | final record: time (BE seconds), weight grams, 10 impedances (BE ×0.1 Ω: trunk, LA, RA, LL, RL at 20 kHz then 100 kHz), user id |
-| `A5` | scale → app | stored offline record, same layout as `A7` |
-| `A0` | scale → app | acknowledgement of an app packet |
-| `B0` | app → scale | acknowledgement: replied packet index, state 0 |
-| `C0` | app → scale | time + user profile (height, last weight ×100, sex bit 7 + age, user id) |
-| `C1` | app → scale | user list with the same profile |
+| Type | Direction            | Meaning                                                                                                                         |
+| ---- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `AA` | scale → app          | device info, right after enabling `FFB3`                                                                                        |
+| `A2` | scale → app (`FFB2`) | live weight: grams in payload bytes 3–5 (big-endian); status 01 measuring, 03 stable, 00 stepped off                            |
+| `A7` | scale → app          | final record: time (BE seconds), weight grams, 10 impedances (BE ×0.1 Ω: trunk, LA, RA, LL, RL at 20 kHz then 100 kHz), user id |
+| `A5` | scale → app          | stored offline record, same layout as `A7`                                                                                      |
+| `A0` | scale → app          | acknowledgement of an app packet                                                                                                |
+| `B0` | app → scale          | acknowledgement: replied packet index, state 0                                                                                  |
+| `C0` | app → scale          | time + user profile (height, last weight ×100, sex bit 7 + age, user id)                                                        |
+| `C1` | app → scale          | user list with the same profile                                                                                                 |
 
 Device test findings:
 
@@ -68,7 +68,7 @@ Result screen: score, category, component points, the four required numbers and 
 
 ## Profile
 
-Name, phone (no OTP), birth date, sex (required, Laki-laki / Perempuan), height, antihypertensive medication, family history, high blood glucose. Waist is removed from the profile and its measuring guide is deleted. Each measurement stores a snapshot of the profile; old results are never recomputed.
+Name, phone (no OTP), birth date, sex (required, Laki-laki / Perempuan), height, antihypertensive medication, family history, high blood glucose. Waist is removed from the profile and its measuring guide is deleted. Each measurement stores a snapshot of the profile; old results are never recomputed. Height is entered as a whole number from 100 to 255 cm, matching the one-byte BLE profile field; health questions use Yes/No to match the archived booleans. Phone-based profile selection is local to the device and does not verify phone ownership.
 
 ## Data and server
 
@@ -91,3 +91,13 @@ For at least three measurements with the handle held, DiaScale's weight, body fa
 
 - Paper section 4.2.1 should be updated to the new dataset results: sensitivity 91.8 % (729/794), specificity 45.9 % (3281/7149).
 - A valid BIA versus RFM comparison needs measurements of 10–20 different people.
+
+## Implementation status — 1 Nov 2026
+
+The app now uses Capacitor 8, the Bluetooth LE plugin, the shared core calculations, and Preferences storage. An eight-second scan filters captured AC 2C subtype/electrode/algorithm advertising data; a connection additionally verifies the FG2504WB model through Device Information. The adapter enables FFB3 before FFB2, serializes packet processing/writes, and cancels after 60 seconds or when leaving the measurement flow/backgrounding the app. Only a complete ten-impedance result for this install and algorithm 43 can be saved.
+
+Profile and full measurement snapshots persist locally. A result and its outgoing queue entry share one durable write; storage errors show a retry without claiming success. The main app no longer generates measurements, uses example profiles, or shows OTP/waist-entry forms. Its result categories and numbers come from the archived core record.
+
+Sync is configured with build-time `VITE_ARCHIVE_URL` (empty by default). With an origin configured, install credentials are created and persisted before uploads, and queued measurements retry with exponential backoff. HTTP 200 duplicate and HTTP 201 creation remove the queued entry only when the response identifies the same result; permanent failures retain both history and queue. The archive exposes no history read-back.
+
+Recorded-packet replay and local Workers runtime integration verify offline save → restart → sync and a response lost after D1 committed → retry → exactly one D1 row. These do not establish exact FitDays+ agreement for a new physical weighing. Deployment, direct scale tests, and physical phone acceptance remain deferred as requested.
