@@ -10,8 +10,7 @@
     {
       "binding": "DB",
       "database_name": "diascale-archive",
-      // Replace after creating D1 in the intended Cloudflare account, before deployment.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "5163d2ec-963e-42a5-b521-37147102f85d",
       "migrations_dir": "migrations",
     },
   ],
