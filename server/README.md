@@ -51,6 +51,14 @@ The token contains 32 cryptographically random bytes. Only its SHA-256 hash is s
 
 The first successful insert is immutable. Retrying a client ID for the same account succeeds without overwriting its original snapshot, even if the new body differs. Concurrent inserts use `ON CONFLICT(id) DO NOTHING`; another account receives only a generic conflict. Indexed columns retain the four numbers, score, category, algorithm versions and timestamps alongside the full JSON.
 
+## Admin panel
+
+`GET /admin/<ADMIN_KEY>` serves a single-page panel: archived results with search by name/phone, category and UTC date filters, per-install view, full JSON payload, CSV export, and deletion of one result or of all results of one person (same profile phone within one app install). There is no login; the long random path segment is the only credential, so treat the URL like a password. Without an `ADMIN_KEY` of at least 32 characters (`A-Z a-z 0-9 _ -`), every `/admin` path returns 404, as does a wrong key.
+
+Locally, put `ADMIN_KEY=<value from openssl rand -hex 32>` in the ignored `server/.dev.vars` and open `http://localhost:8787/admin/<key>`.
+
+The panel calls `/admin/<key>/api/...`: `GET measurements` (`q`, `category`, `from`, `to`, `account`, `offset`; 50 per page), `GET measurements.csv`, `GET`/`DELETE measurements/<id>`, `DELETE accounts/<account-id>/phones/<phone>`. Responses are `no-store`, `no-referrer` and `noindex`; requests carrying another site's `Origin` are refused. An account is one app install and can hold several local profiles, so per-person deletion matches the profile phone inside that account and keeps the account; the install can keep uploading. Deleting only affects the server archive, not the copy on the phone. If something is deleted by mistake, D1 Time Travel can restore the database to an earlier minute within 30 days (`npx wrangler d1 time-travel restore diascale-archive --timestamp=<ISO time>`).
+
 ## Manual deployment
 
 Run these steps only when ready to deploy to the Dzakihamalafirdaus account:
@@ -58,6 +66,7 @@ Run these steps only when ready to deploy to the Dzakihamalafirdaus account:
 1. Run `npx wrangler login`, then `npx wrangler whoami` from `server/` and verify the intended account. Set its `account_id` in `wrangler.jsonc` if the login can access multiple accounts.
 2. Run `npx wrangler d1 create diascale-archive` from `server/` and replace the zero placeholder `database_id` in `wrangler.jsonc` with the returned ID.
 3. Review `ALLOWED_ORIGINS` for the installed app. Run `npx wrangler d1 migrations apply DB --remote` from `server/`.
-4. From the repository root, run `npm run deploy -w server`. Save the Worker HTTPS URL for the app's Phase 5 configuration.
+4. Run `openssl rand -hex 32 | npx wrangler secret put ADMIN_KEY` from `server/` if the admin panel is wanted, and keep the value private.
+5. From the repository root, run `npm run deploy -w server`. Save the Worker HTTPS URL for the app's Phase 5 configuration.
 
 Remote migration and deployment have not been tested. The app store and sync engine are covered against this Worker and local D1, including offline restart and a response lost after commit; exactly one row remains after retry. A separate HTTP smoke test also passed against `wrangler dev`. Delivery from physical Android/iPhone to a deployed archive remains Phase 6 acceptance work.

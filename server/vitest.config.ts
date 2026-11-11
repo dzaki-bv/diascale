@@ -6,7 +6,10 @@ export default defineConfig({
     cloudflareTest(async () => ({
       wrangler: { configPath: "./wrangler.jsonc" },
       miniflare: {
-        bindings: { TEST_MIGRATIONS: await readD1Migrations("./migrations") },
+        bindings: {
+          TEST_MIGRATIONS: await readD1Migrations("./migrations"),
+          ADMIN_KEY: "test-admin-key-0123456789abcdefghijklmnop",
+        },
       },
     })),
   ],

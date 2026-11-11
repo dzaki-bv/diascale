@@ -1,8 +1,10 @@
+import { handleAdmin } from "./admin.ts";
 import { measurementSchema } from "./measurement.ts";
 
 export interface Env {
   DB: D1Database;
   ALLOWED_ORIGINS: string;
+  ADMIN_KEY?: string;
 }
 
 const MAX_BODY_BYTES = 256 * 1024;
@@ -148,6 +150,9 @@ async function route(request: Request, env: Env): Promise<Response> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    if (url.pathname === "/admin" || url.pathname.startsWith("/admin/"))
+      return handleAdmin(request, env, url);
     const origin = request.headers.get("origin");
     const allowed =
       origin !== null && env.ALLOWED_ORIGINS.split(",").includes(origin);

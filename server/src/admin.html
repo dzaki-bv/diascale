@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>DiaScale Admin</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #fff; --text: #1b1f24; --muted: #5d6673; --line: #dfe3e8;
+  --accent: #0d6e6e; --danger: #b42318; --aman: #1a7f37; --meningkat: #b26b00; --waspada: #b42318;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111418; --panel: #1a1f25; --text: #e6e9ed; --muted: #9aa4b1; --line: #2c333b;
+    --accent: #4fb3b3; --danger: #f97066; --aman: #4ac26b; --meningkat: #e3a33b; --waspada: #f97066;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { padding: 16px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+header h1 { font-size: 18px; margin: 0; }
+header span { color: var(--muted); }
+main { padding: 16px; max-width: 1280px; margin: 0 auto; }
+form.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: end; }
+label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
+input, select, button, a.button { font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--text); }
+button, a.button { cursor: pointer; text-decoration: none; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.danger { color: var(--danger); border-color: var(--danger); }
+button:disabled { opacity: .5; cursor: default; }
+.table-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; min-width: 860px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.pill { padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; border: 1px solid currentColor; }
+.Aman { color: var(--aman); } .Meningkat { color: var(--meningkat); } .Waspada { color: var(--waspada); }
+.pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 12px; color: var(--muted); }
+.empty, .error { padding: 24px; text-align: center; color: var(--muted); }
+.error { color: var(--danger); }
+dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--text); width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; }
+dialog::backdrop { background: rgb(0 0 0 / .4); }
+.dlg-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); }
+.dlg-head h2 { font-size: 16px; margin: 0; }
+.dlg-body { padding: 16px; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0 0 16px; }
+dt { color: var(--muted); } dd { margin: 0; word-break: break-all; }
+pre { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px; overflow: auto; max-height: 320px; font-size: 12px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<header><h1>DiaScale Admin</h1><span>Arsip hasil pengukuran</span></header>
+<main>
+  <form class="filters" id="filters">
+    <label>Cari nama / nomor HP<input name="q" type="search" autocomplete="off"></label>
+    <label>Kategori<select name="category"><option value="">Semua</option><option>Aman</option><option>Meningkat</option><option>Waspada</option></select></label>
+    <label>Dari tanggal<input name="from" type="date"></label>
+    <label>Sampai tanggal<input name="to" type="date"></label>
+    <label>ID akun<input name="account" class="mono" size="20" autocomplete="off"></label>
+    <button class="primary" type="submit">Terapkan</button>
+    <button type="reset">Reset</button>
+    <a class="button" id="csv" download>Ekspor CSV</a>
+  </form>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Waktu ukur</th><th>Nama</th><th>Nomor HP</th><th>BMI</th><th>Massa lemak (kg)</th><th>Lemak viseral</th><th>Massa otot (kg)</th><th>Skor</th><th>Kategori</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="status" class="empty">Memuat…</div>
+  </div>
+  <div class="pager"><span id="range"></span><button id="prev" type="button">‹ Sebelumnya</button><button id="next" type="button">Berikutnya ›</button></div>
+</main>
+<dialog id="detail">
+  <div class="dlg-head"><h2>Detail hasil</h2><button type="button" id="close">Tutup</button></div>
+  <div class="dlg-body">
+    <dl id="fields"></dl>
+    <details><summary>Payload lengkap (JSON)</summary><pre id="json"></pre></details>
+    <div class="actions">
+      <button type="button" id="filter-account">Tampilkan semua hasil dari HP ini</button>
+      <button type="button" class="danger" id="del-measurement">Hapus hasil ini</button>
+      <button type="button" class="danger" id="del-person">Hapus semua hasil orang ini</button>
+    </div>
+  </div>
+</dialog>
+<script>
+"use strict";
+const base = location.pathname.replace(/\/+$/, "") + "/api";
+const $ = (id) => document.getElementById(id);
+const form = $("filters");
+let offset = 0;
+let current = null;
+
+const fmt = (v, digits = 1) => (typeof v === "number" ? v.toFixed(digits) : "–");
+const time = (iso) => {
+  const d = new Date(iso);
+  return isNaN(d) ? iso : d.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+};
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  Object.assign(node, props);
+  for (const child of children) node.append(child ?? "");
+  return node;
+}
+function query(extra = {}) {
+  const params = new URLSearchParams();
+  for (const [k, v] of new FormData(form)) if (String(v).trim()) params.set(k, String(v).trim());
+  for (const [k, v] of Object.entries(extra)) params.set(k, v);
+  return params;
+}
+async function call(path, init) {
+  const res = await fetch(base + path, init);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+  return body;
+}
+
+async function load() {
+  $("status").hidden = false;
+  $("status").className = "empty";
+  $("status").textContent = "Memuat…";
+  $("csv").href = `${base}/measurements.csv?${query()}`;
+  let data;
+  try {
+    data = await call(`/measurements?${query({ offset })}`);
+  } catch (e) {
+    $("rows").replaceChildren();
+    $("status").className = "error";
+    $("status").textContent = `Gagal memuat: ${e.message}`;
+    return;
+  }
+  $("rows").replaceChildren(...data.rows.map((r) => {
+    const tr = el("tr", {},
+      el("td", { textContent: time(r.measured_at) }),
+      el("td", { textContent: r.name ?? "–" }),
+      el("td", { textContent: r.phone ?? "–", className: "mono" }),
+      el("td", { textContent: fmt(r.bmi), className: "num" }),
+      el("td", { textContent: fmt(r.fat_mass_kg), className: "num" }),
+      el("td", { textContent: fmt(r.visceral), className: "num" }),
+      el("td", { textContent: fmt(r.muscle_kg), className: "num" }),
+      el("td", { textContent: r.score, className: "num" }),
+      el("td", {}, el("span", { className: `pill ${r.category}`, textContent: r.category })),
+    );
+    tr.addEventListener("click", () => openDetail(r.id));
+    return tr;
+  }));
+  $("status").hidden = data.rows.length > 0;
+  $("status").textContent = "Tidak ada hasil.";
+  const end = data.offset + data.rows.length;
+  $("range").textContent = data.total ? `${data.offset + 1}–${end} dari ${data.total}` : "";
+  $("prev").disabled = data.offset === 0;
+  $("next").disabled = end >= data.total;
+  offset = data.offset;
+}
+
+async function openDetail(id) {
+  try {
+    current = await call(`/measurements/${encodeURIComponent(id)}`);
+  } catch (e) {
+    alert(`Gagal membuka detail: ${e.message}`);
+    return;
+  }
+  const p = current.payload;
+  const yn = (b) => (b ? "Ya" : "Tidak");
+  const rows = [
+    ["ID hasil", current.id], ["ID akun", current.accountId],
+    ["Waktu ukur", time(p.measuredAt)], ["Diterima server", time(current.receivedAt)],
+    ["Nama", p.profile?.name], ["Nomor HP", p.profile?.phone],
+    ["Jenis kelamin", p.profile?.sex === "male" ? "Laki-laki" : p.profile?.sex === "female" ? "Perempuan" : p.profile?.sex],
+    ["Tanggal lahir", p.profile?.birthDate], ["Usia saat ukur", p.inputs?.age],
+    ["Tinggi (cm)", p.profile?.heightCm], ["Berat (kg)", fmt(p.inputs?.weightKg)],
+    ["BMI", fmt(p.numbers?.bmi)], ["Massa lemak (kg)", fmt(p.numbers?.fatMassKg)],
+    ["Lemak (%)", fmt(p.fatPercent)], ["Lemak viseral", fmt(p.numbers?.visceral)],
+    ["Massa otot (kg)", fmt(p.numbers?.muscleKg)], ["Lingkar pinggang (cm)", fmt(p.waistCm)],
+    ["Skor", `${p.score?.total} (${p.score?.category})`],
+    ["Obat antihipertensi", yn(p.profile?.antihypertensive)], ["Riwayat keluarga", yn(p.profile?.familyHistory)],
+    ["Gula darah tinggi", yn(p.profile?.highGlucose)],
+    ["Versi", `${p.versions?.body} / ${p.versions?.score}`],
+  ];
+  $("fields").replaceChildren(...rows.flatMap(([k, v]) => [el("dt", { textContent: k }), el("dd", { textContent: v ?? "–" })]));
+  $("json").textContent = JSON.stringify(p, null, 2);
+  $("detail").showModal();
+}
+
+async function remove(path, message) {
+  if (!confirm(message)) return;
+  try {
+    await call(path, { method: "DELETE" });
+  } catch (e) {
+    alert(`Gagal menghapus: ${e.message}`);
+    return;
+  }
+  $("detail").close();
+  load();
+}
+
+form.addEventListener("submit", (e) => { e.preventDefault(); offset = 0; load(); });
+form.addEventListener("reset", () => setTimeout(() => { offset = 0; load(); }));
+$("prev").addEventListener("click", () => { offset = Math.max(0, offset - 50); load(); });
+$("next").addEventListener("click", () => { offset += 50; load(); });
+$("close").addEventListener("click", () => $("detail").close());
+$("filter-account").addEventListener("click", () => {
+  form.elements.account.value = current.accountId;
+  $("detail").close();
+  offset = 0;
+  load();
+});
+$("del-measurement").addEventListener("click", () =>
+  remove(`/measurements/${encodeURIComponent(current.id)}`,
+    "Hapus hasil ini dari arsip server? Tindakan ini tidak bisa dibatalkan. Salinan di HP pengguna tidak ikut terhapus."));
+$("del-person").addEventListener("click", () => {
+  const { name, phone } = current.payload.profile;
+  remove(`/accounts/${encodeURIComponent(current.accountId)}/phones/${encodeURIComponent(phone)}`,
+    `Hapus semua hasil ${name} (${phone}) dari HP ini di arsip server? Hasil orang lain tidak ikut terhapus. Tindakan ini tidak bisa dibatalkan.`);
+});
+load();
+</script>
+</body>
+</html>
