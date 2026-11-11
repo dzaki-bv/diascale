@@ -48,6 +48,7 @@ export class ScaleAdapter {
   private cleanup: (() => Promise<void>) | null = null;
   private endScan: (() => void) | null = null;
   private closing: Promise<void> = Promise.resolve();
+  private initialized: Promise<void> | null = null;
   private readonly client: Client;
   private readonly now: () => number;
   constructor(client: Client, now: () => number = Date.now) {
@@ -65,20 +66,37 @@ export class ScaleAdapter {
     await this.closing;
   }
 
+  /** iOS replaces its central manager on every initialize, orphaning scanned peripherals: initialize once. */
+  private initialize(): Promise<void> {
+    this.initialized ??= this.client
+      .initialize({ androidNeverForLocation: true })
+      .catch((error) => {
+        this.initialized = null;
+        throw error;
+      });
+    return this.initialized;
+  }
+
   async scan(): Promise<ScaleDevice[]> {
     const generation = this.generation + 1;
     await this.cancel();
     if (generation !== this.generation) return [];
-    await this.client.initialize({ androidNeverForLocation: true });
+    await this.initialize();
     if (generation !== this.generation) return [];
     const devices = new Map<string, ScaleDevice>();
+    // The scale only advertises once someone stands on it: wait up to 60 s,
+    // then stop shortly after the first scale so a second nearby one can appear.
     let timer: ReturnType<typeof setTimeout>;
+    let grace: ReturnType<typeof setTimeout> | undefined;
+    let found: () => void = () => {};
     const done = new Promise<void>((resolve) => {
       this.endScan = resolve;
-      timer = setTimeout(resolve, 8000);
+      timer = setTimeout(resolve, 60_000);
+      found = () => (grace ??= setTimeout(resolve, 1500));
     });
     this.cleanup = async () => {
       clearTimeout(timer);
+      clearTimeout(grace);
       await this.client.stopLEScan().catch(() => {});
     };
     try {
@@ -92,6 +110,7 @@ export class ScaleAdapter {
             name: result.localName || result.device.name || "MY_SCALE",
             rssi: result.rssi ?? -127,
           });
+          found();
         },
       );
       if (generation !== this.generation) {
@@ -238,7 +257,7 @@ export class ScaleAdapter {
         );
     };
     try {
-      await this.client.initialize({ androidNeverForLocation: true });
+      await this.initialize();
       if (!active()) return;
       await this.client.connect(
         device.id,
@@ -275,7 +294,8 @@ export class ScaleAdapter {
       if (!active()) return;
       await this.client.startNotifications(device.id, SERVICE, NOTIFY, receive);
       if (active()) update({ type: "connected" });
-    } catch {
+    } catch (error) {
+      console.error("[DiaScale] connect failed", error);
       await fail(
         "Tidak dapat menghubungkan timbangan. Periksa izin Bluetooth dan pastikan FitDays+ ditutup, lalu ulangi.",
       );

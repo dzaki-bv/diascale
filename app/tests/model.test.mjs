@@ -16,11 +16,11 @@ test("adult validation handles exact birthdays and rejects invalid dates", () =>
 test("result presentation uses the archived score and profile rather than current form values", () => {
   const raw = measurement();
   const view = viewMeasurement(raw);
-  assert.equal(view.score, 12);
+  assert.equal(view.score, 16);
   assert.equal(view.risk, "Aman");
   assert.equal(
     view.contributions.reduce((sum, row) => sum + row.points, 0),
-    12,
+    16,
   );
   assert.equal(view.profile.height, "147");
   assert.equal(view.raw, raw);

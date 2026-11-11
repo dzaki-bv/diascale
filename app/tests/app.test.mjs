@@ -57,23 +57,26 @@ test("signup validates phone, required sex, adult birthday and health answers wi
   assert.match(app.query("main").textContent, /Belum ada pengukuran/);
   assert.deepEqual(app.errors, []);
 });
-test("real capture produces four required numbers, waist, score 12 Aman, and a durable outgoing record", async (t) => {
+test("real capture produces four required numbers, waist, score 16 Aman, and a durable outgoing record", async (t) => {
   const app = await launch(t);
   await completeSignup(app);
   await weigh(app);
   assert.equal(app.screen(), "result");
-  assert.equal(app.query(".score-circle span").firstChild.textContent, "12");
+  assert.equal(app.query(".score-circle span").firstChild.textContent, "16");
   assert.match(app.query(".score-main h2").textContent, /Aman/);
-  assert.equal(
-    app.document.querySelectorAll(".measurement-summary .metric-value").length,
-    4,
+  const summary = app.query(".measurement-summary").textContent;
+  assert.match(summary, /Tinggi\d+cm/);
+  assert.match(summary, /Berat[\d,]+kg/);
+  assert.match(summary, /Lingkar pinggang74,6cm/);
+  assert.doesNotMatch(
+    app.document.querySelector(".factor").textContent,
+    /Lingkar pinggang/,
   );
-  assert.match(app.query(".measurement-summary").textContent, /21,1/);
-  assert.match(app.query(".measurement-summary").textContent, /10,9/);
-  assert.match(app.query(".factor").textContent, /74,6 cm/);
+  assert.match(app.query(".contribution-table").textContent, /67,3 cm²/);
+  assert.match(app.query(".contribution-table").textContent, /21,1 kg\/m²/);
   assert.equal(app.data().outgoing.length, 1);
   assert.equal(app.data().accounts["81200000000"].history.length, 1);
-  assert.equal(app.data().outgoing[0].measurement.score.total, 12);
+  assert.equal(app.data().outgoing[0].measurement.score.total, 16);
   await app.click("history");
   assert.equal(app.document.querySelectorAll(".history-item").length, 1);
   app.query(".history-item").click();
@@ -97,9 +100,9 @@ test("profile and history restore after process restart and old snapshots surviv
   await reopened.click("history");
   reopened.query(".history-item").click();
   await reopened.flush();
-  assert.match(reopened.query(".measurement-summary").textContent, /21,1/);
+  assert.match(reopened.query(".contribution-table").textContent, /21,1/);
   assert.match(
-    reopened.query(".contribution-table tbody tr:last-child").textContent,
+    reopened.query(".contribution-table tbody tr:nth-last-child(2)").textContent,
     /Tidak\s*0/,
   );
   await reopened.click("home");
@@ -134,6 +137,17 @@ test("cancel, disconnect and timeout save nothing and allow a fresh successful r
   assert.equal(app.data().outgoing.length, 0);
   await weigh(app);
   assert.equal(app.screen(), "result");
+});
+test("the measuring screen shows searching, then connected, without replacing the screen", async (t) => {
+  const app = await launch(t);
+  await completeSignup(app);
+  await app.click("scan");
+  const screen = app.query(".scan-orbit");
+  assert.equal(app.query(".measure").classList.contains("connected"), false);
+  await app.discover();
+  assert.equal(app.screen(), "measuring");
+  assert.equal(app.query(".measure").classList.contains("connected"), true);
+  assert.equal(app.query(".scan-orbit"), screen);
 });
 test("empty scans and multiple supported devices use actual discovery results", async (t) => {
   const app = await launch(t);

@@ -22,8 +22,8 @@ export const state = {
   devices: [],
   device: null,
   period: "month",
-  stage: 0,
   weightKg: null,
+  connected: false,
   editing: false,
   busy: false,
   toast: "",
@@ -100,7 +100,7 @@ export function viewMeasurement(m) {
     contributions: [
       {
         label: "Lemak viseral",
-        value: decimal(m.numbers.visceral),
+        value: `${decimal(m.numbers.visceral)} cm²`,
         points: m.score.points.visceral,
       },
       {
@@ -122,6 +122,11 @@ export function viewMeasurement(m) {
         label: "Obat antihipertensi",
         value: m.profile.antihypertensive ? "Ya" : "Tidak",
         points: m.score.points.antihypertensive,
+      },
+      {
+        label: "Riwayat diabetes keluarga",
+        value: m.profile.familyHistory ? "Ya" : "Tidak",
+        points: m.score.points.family,
       },
     ],
   };

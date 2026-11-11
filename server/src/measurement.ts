@@ -48,6 +48,7 @@ export const measurementSchema: z.ZodType<Measurement> = z
         bmi: number.int().min(0).max(20),
         muscle: number.int().min(0).max(15),
         antihypertensive: number.int().min(0).max(5),
+        family: number.int().min(0).max(5).optional(), // absent before diascale@2
       }),
       total: number.int().min(0).max(100),
       category: z.enum(["Aman", "Meningkat", "Waspada"]),

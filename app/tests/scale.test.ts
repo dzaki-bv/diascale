@@ -106,10 +106,24 @@ test("scan deduplicates supported devices and cleans up its native subscription"
     device: { deviceId: "bad", name: "MY_SCALE" },
     manufacturerData: {},
   } as ReturnType<typeof advert>);
-  t.mock.timers.tick(8000);
+  t.mock.timers.tick(1500);
   const devices = await scan;
   assert.equal(devices.length, 1);
   assert.ok(ble.calls.includes("stop-scan"));
+});
+
+test("scan then connect initializes the native client only once", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const ble = new FakeBle();
+  const adapter = new ScaleAdapter(ble, () => new Date(measuredAt).getTime());
+  t.after(() => adapter.cancel());
+  const scan = adapter.scan();
+  await settle();
+  ble.scanCallback!(advert());
+  t.mock.timers.tick(1500);
+  const [found] = await scan;
+  await adapter.measure(found, profile, 0x0da5ca1e, 45.7, () => {});
+  assert.equal(ble.calls.filter((call) => call === "initialize").length, 1);
 });
 
 test("subscribes FFB3 before FFB2 and replays real packets to one archived core result", async (t) => {
@@ -131,7 +145,7 @@ test("subscribes FFB3 before FFB2 and replays real packets to one archived core 
     visceral: 67.3,
     muscleKg: 16,
   });
-  assert.equal(m.score.total, 12);
+  assert.equal(m.score.total, 16);
   assert.equal(m.profile.name, profile.name);
   assert.equal(
     m.packets.filter((packet) => packet.dir === "out").length,
@@ -150,13 +164,15 @@ test("cancellation ignores delayed packets and cancels a scan pending native ini
   await settle();
   assert.equal(events.filter((event) => event.type === "result").length, 0);
   let release!: () => void;
-  ble.initialize = () =>
+  const fresh = new FakeBle();
+  fresh.initialize = () =>
     new Promise((resolve) => {
       release = resolve;
     });
-  const scan = adapter.scan();
+  const pending = new ScaleAdapter(fresh);
+  const scan = pending.scan();
   await settle();
-  await adapter.cancel();
+  await pending.cancel();
   release();
   assert.deepEqual(await scan, []);
 });

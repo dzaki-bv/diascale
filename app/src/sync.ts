@@ -45,7 +45,8 @@ export class SyncEngine {
           "URL arsip harus berupa origin HTTPS atau localhost untuk pengujian.",
         );
     }
-    this.fetcher = options.fetch ?? fetch;
+    // Bind: WebViews reject fetch called with the engine as `this`.
+    this.fetcher = options.fetch ?? fetch.bind(globalThis);
     this.online = options.online ?? (() => true);
     this.now = options.now ?? Date.now;
     this.random = options.random ?? Math.random;

@@ -1,7 +1,9 @@
 import { icon } from "../ui/icons.js";
 import { esc, dateText } from "../ui/format.js";
 import { riskStyle, state } from "../model.js";
-import { button, top, metrics } from "../ui/components.js";
+import { button, top } from "../ui/components.js";
+
+const decimal = (value) => value.toFixed(1).replace(".", ",");
 
 export function result() {
   const r = state.selected || state.history[0];
@@ -14,5 +16,16 @@ export function result() {
     )
     .join(
       "",
-    )}</tbody></table></section><div class="section-head"><h2>Data pengukuran pendukung</h2></div><div class="result-card measurement-summary">${metrics(r)}</div><div class="section-head"><h2>Data kesehatan saat pengukuran</h2></div><div class="factor"><span>Lingkar pinggang</span><span>${r.raw.waistCm.toFixed(1).replace(".", ",")} cm</span></div><div class="factor"><span>Riwayat diabetes keluarga</span><span>${esc(r.profile.family)}</span></div><div class="factor"><span>Riwayat glukosa darah tinggi</span><span>${esc(r.profile.glucose)}</span></div><div class="factor"><span>Penggunaan obat antihipertensi</span><span>${esc(r.profile.meds)}</span></div><div class="form-actions">${button("Lihat riwayat risiko", "history", "secondary", "history")}</div><div class="privacy">${icon("check")}Hasil tersimpan di riwayat Anda.</div>`;
+    )}</tbody></table></section><div class="section-head"><h2>Data pengukuran pendukung</h2></div><div class="result-card measurement-summary"><div class="metrics">${[
+    ["Tinggi", String(r.raw.inputs.heightCm), "cm"],
+    ["Berat", decimal(r.raw.inputs.weightKg), "kg"],
+    ["Lingkar pinggang", decimal(r.raw.waistCm), "cm"],
+  ]
+    .map(
+      ([label, value, unit]) =>
+        `<div><div class="metric-label">${label}</div><div class="metric-value">${value}<small>${unit}</small></div></div>`,
+    )
+    .join(
+      "",
+    )}</div></div><div class="section-head"><h2>Data kesehatan saat pengukuran</h2></div><div class="factor"><span>Riwayat diabetes keluarga</span><span>${esc(r.profile.family)}</span></div><div class="factor"><span>Riwayat glukosa darah tinggi</span><span>${esc(r.profile.glucose)}</span></div><div class="factor"><span>Penggunaan obat antihipertensi</span><span>${esc(r.profile.meds)}</span></div><div class="form-actions">${button("Lihat riwayat risiko", "history", "secondary", "history")}</div><div class="privacy">${icon("check")}Hasil tersimpan di riwayat Anda.</div>`;
 }

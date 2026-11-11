@@ -25,3 +25,12 @@ app/.env
 app/.env.local
 app/.env.*.local
 app/tmp/
+
+# Local-only material: raw hardware captures of real people, dataset backups,
+# third-party reference PDFs, slide images, agent handoff notes and editor config.
+dataset/data_hardware_*/
+dataset/backup/
+docs/reference/
+docs/ppt-visual/
+docs/handoff.md
+.claude/

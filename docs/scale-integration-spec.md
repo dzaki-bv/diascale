@@ -19,19 +19,20 @@ DiaScale reads the LUCA VOSS FG2504WB over Bluetooth, computes four required num
 | Visceral    | paper formula −182.65 + 3.35 × waist, waist from the girth estimate |
 | Muscle mass | dataset formula 0.46 × (weight − fat mass)                          |
 
-## Risk score (`score: diascale@1`)
+## Risk score (`score: diascale@2`)
 
 Rules follow the formulas in `dataset/NHANES_DATARASIO_READY.xlsx` (exported as `dataset/dataset.csv`). Inputs are the displayed, rounded values.
 
 | Component                            | Points                                                                              |
 | ------------------------------------ | ----------------------------------------------------------------------------------- |
 | Visceral                             | < 100 → 0, < 120 → 10, < 140 → 20, < 160 → 30, else 40                              |
-| BMI                                  | ≥ 25 → 20, ≥ 23 → 10, else 0                                                        |
-| Body fat % (BIA)                     | men < 20 → 0, < 25 → 5, < 30 → 10, < 35 → 15, else 20; women < 30, < 35, < 40, < 45 |
-| Muscle (SMI = muscle mass / height²) | men < 7 → 15, < 8.5 → 7, else 0; women < 5.7 → 15, < 6.5 → 7, else 0                |
+| BMI                                  | ≥ 25 → 18, ≥ 23 → 9, else 0                                                         |
+| Body fat % (BIA)                     | men < 20 → 0, < 25 → 4, < 30 → 8, < 35 → 13, else 18; women < 30, < 35, < 40, < 45 |
+| Muscle (SMI = muscle mass / height²) | men < 7 → 14, < 8.5 → 7, else 0; women < 5.7 → 14, < 6.5 → 7, else 0                |
 | Antihypertensive medication          | Yes → 5                                                                             |
+| Family diabetes history              | Yes → 5                                                                             |
 
-Category: Aman < 40, Meningkat 40–74, Waspada ≥ 75. Family history and high blood glucose are collected and archived but not scored yet. The per-sex visceral level cut-offs previously in `src/model.js` are retired.
+Category: Aman < 40, Meningkat 40–74, Waspada ≥ 75. Family history is scored as of `diascale@2` (BMI, body fat and muscle maxima were each lowered to keep the total at 100). High blood glucose is collected and archived but not scored yet. The per-sex visceral level cut-offs previously in `src/model.js` are retired.
 
 ## Body composition
 

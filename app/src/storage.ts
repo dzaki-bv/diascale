@@ -1,3 +1,4 @@
+import { rescore, SCORE_VERSION } from "@diascale/core";
 import type { Measurement, Profile } from "@diascale/core";
 
 export interface Outgoing {
@@ -48,6 +49,7 @@ export class LocalStore {
           "Data tersimpan tidak dapat dibaca. Data asli tetap disimpan.",
         );
       this.data = data;
+      await this.upgradeScores();
       return;
     }
     this.data = {
@@ -62,6 +64,23 @@ export class LocalStore {
       key: STORAGE_KEY,
       value: JSON.stringify(this.data),
     });
+  }
+
+  /** Recomputes results saved under an older score version, history and queue alike. */
+  private async upgradeScores(): Promise<void> {
+    const stale = (m: Measurement) => m.versions.score !== SCORE_VERSION;
+    const { accounts, outgoing } = this.data;
+    if (
+      !Object.values(accounts).some((a) => a.history.some(stale)) &&
+      !outgoing.some((row) => stale(row.measurement))
+    )
+      return;
+    // A failed write keeps the older scores readable; the next open retries.
+    await this.update((data) => {
+      for (const account of Object.values(data.accounts))
+        account.history = account.history.map(rescore);
+      for (const row of data.outgoing) row.measurement = rescore(row.measurement);
+    }).catch(() => {});
   }
 
   snapshot(): LocalData {

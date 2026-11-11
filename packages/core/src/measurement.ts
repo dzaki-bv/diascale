@@ -72,14 +72,30 @@ export function buildMeasurement({ id = crypto.randomUUID(), measuredAt, profile
     visceral: round1(-182.65 + 3.35 * waistCm),
     muscleKg: round1(0.46 * (weight - fatMass)),
   };
-  const score = scoreRisk({
-    male, heightCm: profile.heightCm, visceral: numbers.visceral, fatPercent, bmi: numbers.bmi,
-    muscleKg: numbers.muscleKg, antihypertensive: profile.antihypertensive,
-  });
+  const score = scoreOf(male, profile, numbers, fatPercent);
   return {
     id, measuredAt, profile: { ...profile }, inputs, numbers, fatPercent, waistCm, score,
     comparison: { rfmFatPercent: round1((male ? 64 : 76) - (20 * profile.heightCm) / waistCm), body },
     packets: packets.map((p) => ({ ...p })),
     versions: { body: BODY_VERSION, score: SCORE_VERSION },
+  };
+}
+
+function scoreOf(male: boolean, profile: Profile, numbers: Measurement["numbers"], fatPercent: number) {
+  return scoreRisk({
+    male, heightCm: profile.heightCm, visceral: numbers.visceral, fatPercent, bmi: numbers.bmi,
+    muscleKg: numbers.muscleKg, antihypertensive: profile.antihypertensive,
+    familyHistory: profile.familyHistory,
+  });
+}
+
+/** Recomputes an older record's score with the current rules from its stored rounded
+ * numbers and profile snapshot. Records already on SCORE_VERSION are returned as is. */
+export function rescore(m: Measurement): Measurement {
+  if (m.versions.score === SCORE_VERSION) return m;
+  return {
+    ...structuredClone(m),
+    score: scoreOf(m.inputs.male, m.profile, m.numbers, m.fatPercent),
+    versions: { ...m.versions, score: SCORE_VERSION },
   };
 }

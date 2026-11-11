@@ -31,6 +31,7 @@ import {
   devices,
   measuring,
   errorScreen,
+  weightText,
 } from "./screens/measurement.js";
 import { result } from "./screens/results.js";
 import { history } from "./screens/history.js";
@@ -78,11 +79,15 @@ function toast(message) {
     render();
   }, 3000);
 }
+let rendered = "";
 function render() {
   const s = screens[state.screen] ? state.screen : "welcome";
   const authenticated = ["home", "history", "profile", "result"].includes(s);
-  document.getElementById("app").innerHTML =
-    `<div class="shell"><aside class="identity">${logo()}<div class="intro"><div class="eyebrow">Kenali tubuh. Pahami risiko.</div><h1>Langkah kecil.<br><em>Makna besar</em><br>untuk kesehatan.</h1><div class="intro-rule"></div><p>Kenali risiko diabetes tipe 2 melalui data tubuh Anda. Mulai kebiasaan baik, satu pengukuran setiap waktu.</p></div><div class="intro-bottom"><span>${icon("shield")}Personal untuk Anda</span><span>${icon("activity")}Terpantau dari waktu ke waktu</span></div></aside><section class="phone variant-${variant.toLowerCase()}" data-screen="${s}" aria-label="Aplikasi DiaScale"><div class="statusbar"><span>9:41</span><span class="status-icons">${icon("signal")}${icon("wifi")}${icon("battery")}</span></div><main class="screen ${authenticated ? "" : "auth-view"}"><div class="content">${screens[s]()}</div></main>${authenticated ? nav() : ""}${state.toast ? `<div class="toast" role="status">${esc(state.toast)}</div>` : ""}<div class="home-indicator"></div></section></div>`;
+  const html = `<div class="shell"><aside class="identity">${logo()}<div class="intro"><div class="eyebrow">Kenali tubuh. Pahami risiko.</div><h1>Langkah kecil.<br><em>Makna besar</em><br>untuk kesehatan.</h1><div class="intro-rule"></div><p>Kenali risiko diabetes tipe 2 melalui data tubuh Anda. Mulai kebiasaan baik, satu pengukuran setiap waktu.</p></div><div class="intro-bottom"><span>${icon("shield")}Personal untuk Anda</span><span>${icon("activity")}Terpantau dari waktu ke waktu</span></div></aside><section class="phone variant-${variant.toLowerCase()}" aria-label="Aplikasi DiaScale"><div class="statusbar"><span>9:41</span><span class="status-icons">${icon("signal")}${icon("wifi")}${icon("battery")}</span></div><main class="screen ${authenticated ? "" : "auth-view"}"><div class="content">${screens[s]()}</div></main>${authenticated ? nav() : ""}${state.toast ? `<div class="toast" role="status">${esc(state.toast)}</div>` : ""}<div class="home-indicator"></div></section></div>`;
+  // Identical markup (e.g. scan → measuring) keeps the existing DOM and its animations.
+  if (html !== rendered)
+    document.getElementById("app").innerHTML = rendered = html;
+  document.querySelector(".phone").dataset.screen = s;
   document.querySelectorAll("button").forEach((button) => {
     button.disabled = state.busy;
   });
@@ -113,6 +118,7 @@ async function startScan() {
     return;
   }
   state.devices = [];
+  state.connected = false;
   state.failureReason = "";
   go("scan");
   const current = operation;
@@ -137,7 +143,7 @@ async function connect(id) {
     return;
   }
   state.device = device;
-  state.stage = 0;
+  state.connected = false;
   state.weightKg = null;
   state.failureReason = "";
   go("measuring");
@@ -152,13 +158,14 @@ async function connect(id) {
     (event) => {
       if (current !== operation) return;
       if (event.type === "connected") {
-        if (state.stage === 0) state.stage = 1;
-        render();
+        // Toggle the state in place, like the weight below.
+        state.connected = true;
+        document.querySelector(".measure")?.classList.add("connected");
       } else if (event.type === "live") {
+        // Update the weight in place: re-rendering restarts the screen animations.
         state.weightKg = event.status === "off" ? null : event.grams / 1000;
-        state.stage =
-          event.status === "off" ? 1 : event.status === "stable" ? 3 : 2;
-        render();
+        const weight = document.querySelector(".live-weight");
+        if (weight) weight.textContent = weightText(state.weightKg);
       } else if (event.type === "failure") {
         state.failureReason = event.reason;
         go("measure-error");
@@ -172,8 +179,10 @@ async function connect(id) {
 async function persistResult() {
   if (!state.unsaved || state.busy) return;
   state.busy = true;
-  state.stage = 4;
-  render();
+  // Disable in place: a re-render would restart the measuring screen's animations.
+  document.querySelectorAll("button").forEach((button) => {
+    button.disabled = true;
+  });
   try {
     await saveMeasurement(state.unsaved);
     state.unsaved = null;

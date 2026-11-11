@@ -69,3 +69,31 @@ test("corrupt or unknown storage is preserved instead of reset", async () => {
     assert.equal(driver.value, original);
   }
 });
+
+test("opening upgrades older scores in history and queue once, keeping everything else", async () => {
+  const driver = memoryDriver();
+  const store = new LocalStore(driver);
+  await store.load();
+  await store.saveProfile(profile.phone, profile);
+  const current = measurement();
+  await store.saveMeasurement(profile.phone, current);
+  const old = JSON.parse(driver.value!);
+  for (const m of [
+    old.accounts[profile.phone].history[0],
+    old.outgoing[0].measurement,
+  ]) {
+    m.score = { points: { visceral: 0, fat: 5, bmi: 0, muscle: 7, antihypertensive: 0 }, total: 12, category: "Aman" };
+    m.versions.score = "diascale@1";
+  }
+  driver.value = JSON.stringify(old);
+
+  const reopened = new LocalStore(driver);
+  await reopened.load();
+  const data = reopened.snapshot();
+  assert.deepEqual(data.accounts[profile.phone].history, [current]);
+  assert.deepEqual(data.outgoing[0].measurement, current);
+  assert.deepEqual(JSON.parse(driver.value!), data, "the upgrade is saved");
+  const saved = driver.value;
+  await new LocalStore(driver).load();
+  assert.equal(driver.value, saved, "an upgraded document is not rewritten");
+});

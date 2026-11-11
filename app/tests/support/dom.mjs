@@ -159,7 +159,7 @@ export async function openApp({ saved = new Map(), failStorage = false } = {}) {
           rssi: -45,
           manufacturerData: { [0x2cac]: "A2EBCDF4656033711E1A0A012B00004400" },
         });
-      await this.advance(8000);
+      await this.advance(ids.length ? 1500 : 60000);
     },
     async replay(id = "scale") {
       for (const packet of captures["device-test-b-handshake"]) {

@@ -5,7 +5,7 @@ import { fromHex } from "../src/protocol.ts";
 import { ScaleSession } from "../src/session.ts";
 import { BODY_VERSION } from "../src/body.ts";
 import { SCORE_VERSION } from "../src/score.ts";
-import { ageOn, buildMeasurement, type Profile } from "../src/measurement.ts";
+import { ageOn, buildMeasurement, rescore, type Profile } from "../src/measurement.ts";
 
 const captures = JSON.parse(readFileSync(new URL("./fixtures/captures.json", import.meta.url), "utf8"));
 const profile: Profile = {
@@ -40,7 +40,7 @@ test("device test B becomes a complete measurement record", () => {
   assert.equal(m.fatPercent, 23.9);
   assert.equal(m.waistCm, 74.6);
   assert.deepEqual(m.score, {
-    points: { visceral: 0, fat: 5, bmi: 0, muscle: 7, antihypertensive: 0 }, total: 12, category: "Aman",
+    points: { visceral: 0, fat: 4, bmi: 0, muscle: 7, antihypertensive: 0, family: 5 }, total: 16, category: "Aman",
   });
   assert.equal(m.comparison.rfmFatPercent, 24.6); // 64 − 20 × 147 / 74.6
   assert.equal(m.comparison.body.vfal, 3);
@@ -72,4 +72,18 @@ test("a weighing the body composition rejects builds no record", () => {
 test("age counts whole years up to the measurement day", () => {
   assert.equal(ageOn("2007-11-01", "2026-11-01T03:00:00Z"), 19);
   assert.equal(ageOn("2007-11-02", "2026-11-01T03:00:00Z"), 18);
+});
+
+test("rescore upgrades an older score from the stored numbers and profile snapshot", () => {
+  const { record, packets } = deviceTestB();
+  const current = buildMeasurement({ id: "c1", measuredAt, profile, record, packets });
+  const old = structuredClone(current);
+  old.score = {
+    points: { visceral: 0, fat: 5, bmi: 0, muscle: 7, antihypertensive: 0 }, total: 12, category: "Aman",
+  } as typeof old.score;
+  old.versions.score = "diascale@1";
+  const upgraded = rescore(old);
+  assert.deepEqual(upgraded, current);
+  assert.equal(old.versions.score, "diascale@1", "the input is not mutated");
+  assert.equal(rescore(current), current, "current records are returned unchanged");
 });

@@ -109,10 +109,10 @@ it("archives a real core measurement and all original JSON alongside searchable 
     fat_mass_kg: 10.9,
     visceral: 67.3,
     muscle_kg: 16,
-    score: 12,
+    score: 16,
     category: "Aman",
     body_version: "wla43@1",
-    score_version: "diascale@1",
+    score_version: "diascale@2",
     received_at: expect.any(String),
   });
   expect(JSON.parse(row!.payload as string)).toEqual(m);

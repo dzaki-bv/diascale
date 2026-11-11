@@ -382,6 +382,47 @@ p {
   color: var(--blue-dark);
   background: var(--pale);
 }
+.badge.muted {
+  color: var(--muted);
+  background: var(--line);
+}
+.measure .badge svg {
+  width: 12px;
+  height: 12px;
+}
+.measure:not(.connected) .when-connected,
+.measure.connected .when-searching {
+  display: none;
+}
+.measure:not(.connected) .scan-orbit {
+  border-color: var(--line);
+  background: radial-gradient(
+    circle,
+    #f1f4f4 0 34%,
+    transparent 35% 49%,
+    #f1f4f4 50% 51%,
+    transparent 52%
+  );
+}
+.measure:not(.connected) .scan-orbit svg {
+  color: var(--muted);
+}
+.measure:not(.connected) .scan-orbit:before {
+  border-color: #cfd8d9;
+}
+.measure:not(.connected) .scan-orbit:after,
+.measure:not(.connected) .live-weight {
+  visibility: hidden;
+}
+.measure.connected .scan-orbit {
+  border: 2px solid var(--blue);
+  animation: measuring 1.6s ease-in-out infinite;
+}
+@keyframes measuring {
+  50% {
+    box-shadow: 0 0 0 10px rgba(78, 150, 174, 0.15);
+  }
+}
 .dot {
   width: 5px;
   height: 5px;
@@ -640,14 +681,6 @@ input.with-unit {
   width: 13px;
   height: 13px;
 }
-.otp-input {
-  font-size: 27px;
-  text-align: center;
-  letter-spacing: 12px;
-  height: 64px;
-  padding-left: 23px;
-  margin: 27px 0 13px;
-}
 .steps {
   display: flex;
   gap: 7px;
@@ -814,54 +847,6 @@ input.with-unit {
   line-height: 1.6;
   color: #527381;
   margin-top: 22px;
-}
-.measure-stage {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 17px 0;
-  border-bottom: 1px solid var(--line);
-  font-size: 12px;
-  color: var(--muted);
-}
-.stage-number {
-  width: 25px;
-  height: 25px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  font-size: 10px;
-}
-.measure-stage.active {
-  color: var(--blue-dark);
-  font-weight: 600;
-}
-.measure-stage.active .stage-number {
-  background: var(--pale);
-  border-color: #bfdce5;
-}
-.measure-stage.complete .stage-number {
-  background: var(--blue);
-  border-color: var(--blue);
-  color: white;
-}
-.measure-stage.complete .stage-number svg {
-  width: 13px;
-  height: 13px;
-}
-.progress {
-  height: 5px;
-  background: var(--line);
-  border-radius: 5px;
-  overflow: hidden;
-  margin: 20px 0;
-}
-.progress span {
-  display: block;
-  height: 100%;
-  background: var(--blue);
-  animation: progress 3s linear forwards;
 }
 .score-panel {
   padding: 24px;
@@ -1329,14 +1314,6 @@ input.with-unit {
 @keyframes rotate {
   to {
     transform: rotate(360deg);
-  }
-}
-@keyframes progress {
-  from {
-    width: 0;
-  }
-  to {
-    width: 100%;
   }
 }
 @media (min-width: 1500px) {
@@ -2113,13 +2090,14 @@ body,
   border: 0;
   gap: 18px;
   align-items: start;
+  grid-template-columns: repeat(3, 1fr);
 }
 .measurement-summary .metric-label {
   margin-bottom: 9px;
   line-height: 1.5;
 }
 .measurement-summary .metric-value {
-  font-size: 26px;
+  font-size: 22px;
   line-height: 1.2;
 }
 .measurement-summary .metric-value small {
@@ -2332,9 +2310,6 @@ body,
 .clinical-card .combined-risk .badge {
   font-size: 12px;
   font-weight: 700;
-}
-.measurement-summary .metric-value {
-  font-size: 22px;
 }
 .page-picker {
   position: fixed;

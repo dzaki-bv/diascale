@@ -50,7 +50,7 @@ export function metrics(record) {
   const rows = [
     ["Indeks massa tubuh", n.bmi, "kg/m²"],
     ["Massa lemak", n.fatMassKg, "kg"],
-    ["Lemak viseral", n.visceral, ""],
+    ["Lemak viseral", n.visceral, "cm²"],
     ["Massa otot", n.muscleKg, "kg"],
   ];
   return `<div class="metrics">${rows.map(([label, value, unit]) => `<div><div class="metric-label">${label}</div><div class="metric-value">${value.toFixed(1).replace(".", ",")}<small>${unit}</small></div></div>`).join("")}</div>`;

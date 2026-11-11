@@ -190,3 +190,26 @@ test("an unconfigured archive makes no requests and leaves all data local", asyn
   assert.equal(store.snapshot().credentials, null);
   assert.throws(() => new SyncEngine(store, { url: "http://public.test" }));
 });
+
+test("the default fetch is called like a browser's, not as a method of the engine", async (t) => {
+  // WebViews throw "Illegal invocation" when fetch runs with a non-window `this`.
+  const original = globalThis.fetch;
+  const calls: string[] = [];
+  globalThis.fetch = function (this: unknown, url: RequestInfo | URL) {
+    if (this !== undefined && this !== globalThis)
+      throw new TypeError("Illegal invocation");
+    calls.push(String(url));
+    return Promise.resolve(Response.json({ id: "account", token }, { status: 201 }));
+  } as typeof fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+  });
+  const store = new LocalStore(memoryDriver());
+  await store.load();
+  const engine = new SyncEngine(store, { url: "http://127.0.0.1:8787" });
+  t.after(() => engine.stop());
+  engine.start();
+  await engine.flush();
+  assert.deepEqual(calls, ["http://127.0.0.1:8787/v1/accounts"]);
+  assert.deepEqual(store.snapshot().credentials, { id: "account", token });
+});
